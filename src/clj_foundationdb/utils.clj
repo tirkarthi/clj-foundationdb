@@ -11,7 +11,6 @@
   [value]
   (.getInt (ByteBuffer/wrap value)))
 
-
 (defn bytes-to-str
   [bytes]
   (apply str (map char bytes)))

@@ -7,6 +7,8 @@
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [fdb "5.1.5"]]
   :plugins [[lein-localrepo "0.5.4"]
-            [lein-codox "0.10.3"]]
+            [lein-codox "0.10.3"]
+            [lein-cljfmt "0.5.7"]]
+  :profiles {:dev {:dependencies [[org.clojure/test.check "0.9.0"]]}}
   :codox {:output-path "docs"
           :source-uri "http://github.com/tirkarthi/clj-foundationdb/blob/master/{filepath}#L{line}"})

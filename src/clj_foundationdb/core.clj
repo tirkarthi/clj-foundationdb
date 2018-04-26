@@ -2,6 +2,7 @@
   (:import (com.apple.foundationdb Database)
            (com.apple.foundationdb FDB)
            (com.apple.foundationdb Range)
+           (com.apple.foundationdb KeySelector)
            (com.apple.foundationdb.tuple Tuple)
            (java.nio ByteBuffer))
   (:require [clojure.spec.alpha :as spec]
@@ -76,8 +77,7 @@
 (spec/fdef set-keys
            :args (spec/cat :key (spec/coll-of string?) :value string?))
 
-
-(defn clear-val
+(defn clear-key
   "Clear a key from the database"
   [key]
   (reify
@@ -89,8 +89,7 @@
 (spec/fdef clear-val
            :args (spec/cat :key string?))
 
-
-(defn clear-tuple-val
+(defn clear-tuple-key
   "Clear a key from the database"
   [key]
   (reify
@@ -102,55 +101,62 @@
 (spec/fdef clear-tuple-val
            :args (spec/cat :key (spec/coll-of string?)))
 
-(defn get-range
-  "Get a range of key values as a vector"
+(defn get-range-startswith
+  "Get a range of key values as a vector that starts with prefix"
   [prefix]
   (reify
     java.util.function.Function
     (apply [this tr]
-      (let [begin (.getBytes prefix)
-            r     (Range/startsWith begin)]
+      (let [prefix (.getBytes prefix)
+            r     (Range/startsWith prefix)]
+        (->> (.getRange tr r)
+             (mapv #(vector
+                     (bytes-to-str (.getKey %1))
+                     (bytes-to-str (.getValue %1)))))))))
+
+(spec/fdef get-range-startswith
+           :args (spec/cat :prefix string?))
+
+(defn get-range
+  "Get a range of key values as a vector"
+  [begin end]
+  (reify
+    java.util.function.Function
+    (apply [this tr]
+      (let [begin (.getBytes begin)
+            end   (.getBytes end)
+            r     (Range. begin end)]
         (->> (.getRange tr r)
              (mapv #(vector
                      (bytes-to-str (.getKey %1))
                      (bytes-to-str (.getValue %1)))))))))
 
 (spec/fdef get-range
-           :args (spec/cat :prefix string?))
-
+           :args (spec/cat :begin string? :end string?))
 
 (defn get-all
-  "Get a range of key values as a vector"
-  [key]
-  (reify
-    java.util.function.Function
-    (apply [this tr]
-      (let [key (Tuple/from (to-array [key]))]
-        (->> (.getRange tr (.range key))
-             (mapv #(vector
-                     (.getString (Tuple/fromBytes (.getKey %1)) 1)
-                     (.getString (Tuple/fromBytes (.getValue %1)) 0))))))))
+  "Get all key values as a vector"
+  []
+  (get-range "" "xFF"))
 
 (defn clear-range
   "Clear a range of keys from the database"
-  [key]
+  [begin end]
   (reify
     java.util.function.Function
-    (apply [this tr] (.clear tr (.range key)))))
-
+    (apply [this tr]
+      (let [begin (.getBytes begin)
+            end   (.getBytes end)]
+        (.clear tr (Range. begin end))))))
 
 (spec/fdef clear-range
-           :args (spec/cat :key string?))
-
+           :args (spec/cat :begin string? :end string?))
 
 ;; https://stackoverflow.com/a/21421524/2610955
 
 (defn clear-all
   "Clear all the keys and values"
   []
-  (reify
-    java.util.function.Function
-    (apply [this tr]
-      (let [begin (.getBytes "")
-            end   (.getBytes "xFF")]
-        (.clear tr (Range. begin end))))))
+  (let [begin ""
+        end   "xFF"]
+    (clear-range begin end)))
