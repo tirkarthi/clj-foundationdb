@@ -9,4 +9,4 @@
   :plugins [[lein-localrepo "0.5.4"]
             [lein-codox "0.10.3"]]
   :codox {:output-path "docs"
-          :source-uri "http://github.com/tirkarthi/clj-http-ssrf/blob/master/{filepath}#L{line}"})
+          :source-uri "http://github.com/tirkarthi/clj-foundationdb/blob/master/{filepath}#L{line}"})
