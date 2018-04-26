@@ -1,4 +1,4 @@
-# clj-foundationdb
+# clj-foundationdb [![Build Status](https://travis-ci.org/tirkarthi/clj-foundationdb.svg?branch=master)](https://travis-ci.org/tirkarthi/clj-foundationdb)
 
 A Clojure wrapper for FoundationDB
 
