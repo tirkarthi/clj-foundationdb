@@ -96,7 +96,7 @@
       (let [key (.getBytes key)]
         (.clear tr key)))))
 
-(spec/fdef clear-val
+(spec/fdef clear-key
            :args (spec/cat :key string?))
 
 (defn clear-tuple-key
@@ -108,7 +108,7 @@
       (let [key (.pack (Tuple/from (to-array [key])))]
         (.clear tr key)))))
 
-(spec/fdef clear-tuple-val
+(spec/fdef clear-tuple-key
            :args (spec/cat :key (spec/coll-of string?)))
 
 (defn get-range-startswith
@@ -135,6 +135,9 @@
       (let [key (.getBytes key)]
         (.watch tr key)))))
 
+(spec/fdef watch
+           :args (spec/cat :key string?))
+
 (defn get-tuple-range-startswith
   "Get a range of key values as a vector that starts with prefix"
   [prefix]
@@ -147,6 +150,9 @@
              (mapv #(vector
                      (bytes-to-str (.getKey %1))
                      (bytes-to-str (.getValue %1)))))))))
+
+(spec/fdef get-tuple-range-startswith
+           :args (spec/cat :prefix string?))
 
 (defn get-range
   "Get a range of key values as a vector"
