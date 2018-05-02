@@ -13,9 +13,9 @@
         keys ["bar" "bar1" "bar2" "car"]
         value "1"]
     (with-open [db (.open fd)]
-      (.run db (set-keys keys value))
+      (set-keys db keys value)
       (f)
-      (.run db (clear-all)))))
+      (clear-all db))))
 
 (use-fixtures :each key-fixture)
 
@@ -25,26 +25,28 @@
           key "foo"
           value "1"]
       (with-open [db (.open fd)]
-        (is (nil? (.run db (get-val key))))
-        (.run db (set-val key value))
-        (is (= (.run db (get-val key)) value))))))
+        (is (nil? (get-val db key)))
+        (set-val db key value)
+        (is (= (get-val db key)) value)))))
 
 (deftest test-multiple-set
   (testing "Test multiple set"
     (let [fd (. FDB selectAPIVersion 510)
-          keys ["bar" "bar1" "bar2" "car"]
+          keys ["foo" "for"]
+          expected-keys ["bar" "bar1" "bar2" "car" "foo" "for"]
           value "1"]
       (with-open [db (.open fd)]
-        (is (every? #(= (.run db (get-val %1)) value) keys)))))
+        (set-keys db keys value)
+        (is (every? #(= (get-val db %1) value) expected-keys)))))
 
   (testing "Test get all keys"
     (let [fd (. FDB selectAPIVersion 510)
-          keys ["bar" "bar1" "bar2" "car"]
+          keys ["bar" "bar1" "bar2" "car" "foo" "for"]
           value "1"]
       (with-open [db (.open fd)]
-        (let [returned-keys (map first (.run db (get-all)))]
+        (let [returned-keys (map first (get-all db))]
           (is (= keys returned-keys))
-          (is (every? #(= (.run db (get-val %1)) value) keys)))))))
+          (is (every? #(= (get-val db %1) value) keys)))))))
 
 (deftest test-get-range-begin-end
   (testing "Test get all keys with the range of begin and end with end being exclusive. [a, b)"
@@ -52,9 +54,9 @@
           prefix "b"
           value "1"]
       (with-open [db (.open fd)]
-        (let [keys (map first (.run db (get-range "b" "bar2")))]
+        (let [keys (map first (get-range db "b" "bar2"))]
           (is (= '("bar" "bar1") keys))
-          (is (every? #(= (.run db (get-val %1)) value) keys)))))))
+          (is (every? #(= (get-val db %1) value) keys)))))))
 
 (deftest test-get-range-starts-with
   (testing "Test get all keys with prefix"
@@ -62,9 +64,9 @@
           prefix "c"
           value "1"]
       (with-open [db (.open fd)]
-        (let [keys (map first (.run db (get-range-startswith prefix)))]
+        (let [keys (map first (get-range-startswith db prefix))]
           (is (= '("car") keys))
-          (is (every? #(= (.run db (get-val %1)) value) keys)))))))
+          (is (every? #(= (get-val db %1) value) keys)))))))
 
 (deftest test-get-last-less-than
   (testing "Test last less than the given key"
@@ -73,9 +75,9 @@
           value "1"
           expected-keys '("bar")]
       (with-open [db (.open fd)]
-        (let [keys (map first (.run db (last-less-than key)))]
+        (let [keys (map first (last-less-than db key))]
           (is (= expected-keys keys))
-          (is (every? #(= (.run db (get-val %1)) value) keys)))))))
+          (is (every? #(= (get-val db %1) value) keys)))))))
 
 (deftest test-get-last-less-or-equal
   (testing "Test last less than or equal to the given key"
@@ -84,9 +86,9 @@
           value "1"
           expected-keys '("bar1")]
       (with-open [db (.open fd)]
-        (let [keys (map first (.run db (last-less-or-equal key)))]
+        (let [keys (map first (last-less-or-equal db key))]
           (is (= expected-keys keys))
-          (is (every? #(= (.run db (get-val %1)) value) keys)))))))
+          (is (every? #(= (get-val db %1) value) keys)))))))
 
 (deftest test-get-first-greater-than
   (testing "Test first greater than"
@@ -95,9 +97,9 @@
           value "1"
           expected-keys '("bar1")]
       (with-open [db (.open fd)]
-        (let [keys (map first (.run db (first-greater-than key)))]
+        (let [keys (map first (first-greater-than db key))]
           (is (= expected-keys keys))
-          (is (every? #(= (.run db (get-val %1)) value) keys))))))
+          (is (every? #(= (get-val db %1) value) keys))))))
 
   (testing "Test first greater than with limit"
     (let [fd (. FDB selectAPIVersion 510)
@@ -106,16 +108,16 @@
           limit 2
           expected-keys '("bar1" "bar2")]
       (with-open [db (.open fd)]
-        (let [keys (map first (.run db (first-greater-than key limit)))]
+        (let [keys (map first (first-greater-than db key limit))]
           (is (= expected-keys keys))
-          (is (every? #(= (.run db (get-val %1)) value) keys))))))
+          (is (every? #(= (get-val db %1) value) keys))))))
 
   (testing "Test first greater than with last key"
     (let [fd (. FDB selectAPIVersion 510)
           key "foo"
           value "1"]
       (with-open [db (.open fd)]
-        (let [keys (.run db (first-greater-than key))]
+        (let [keys (first-greater-than db key)]
           (is (empty? keys)))))))
 
 (deftest test-get-first-greater-or-equal
@@ -125,9 +127,9 @@
           value "1"
           expected-keys '("bar")]
       (with-open [db (.open fd)]
-        (let [keys (map first (.run db (first-greater-or-equal key)))]
+        (let [keys (map first (first-greater-or-equal db key))]
           (is (= expected-keys keys))
-          (is (every? #(= (.run db (get-val %1)) value) keys))))))
+          (is (every? #(= (get-val db %1) value) keys))))))
 
   (testing "Test first greater or equal with limit"
     (let [fd (. FDB selectAPIVersion 510)
@@ -136,16 +138,16 @@
           limit 2
           expected-keys '("bar" "bar1")]
       (with-open [db (.open fd)]
-        (let [keys (map first (.run db (first-greater-or-equal key limit)))]
+        (let [keys (map first (first-greater-or-equal db key limit))]
           (is (= expected-keys keys))
-          (is (every? #(= (.run db (get-val %1)) value) keys)))))))
+          (is (every? #(= (get-val db %1) value) keys)))))))
 
 (deftest test-non-existent-get
   (testing "Test non-existent record for nil"
     (let [fd (. FDB selectAPIVersion 510)
           key "foo12"]
       (with-open [db (.open fd)]
-        (is (nil? (.run db (get-val key))))))))
+        (is (nil? (get-val db key)))))))
 
 (deftest test-clear
   (testing "Test clear a key"
@@ -153,14 +155,14 @@
           key "foo123"
           value "1"]
       (with-open [db (.open fd)]
-        (.run db (set-val key value))
-        (is (= (.run db (get-val key)) "1"))
-        (.run db (clear-key key))
-        (is (nil? (.run db (get-val key))))))))
+        (set-val db key value)
+        (is (= (get-val db key) "1"))
+        (clear-key db key)
+        (is (nil? (get-val db key)))))))
 
 (deftest test-clear-all
   (testing "Test clear all"
     (let [fd (. FDB selectAPIVersion 510)]
       (with-open [db (.open fd)]
-        (.run db (clear-all))
-        (is (empty? (.run db (get-all))))))))
+        (clear-all db)
+        (is (empty? (get-all db)))))))
