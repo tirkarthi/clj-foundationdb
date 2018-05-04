@@ -1,16 +1,14 @@
 (ns clj-foundationdb.utils
-  (:import (java.nio ByteBuffer)))
+  (:import (com.apple.foundationdb.tuple Tuple)))
 
-(defn encode-int
-  [value]
-  (let [output (byte-array 4)]
-    (.putInt (ByteBuffer/wrap output) value)
-    output))
+(defn key->tuple
+  [key]
+  (.pack (Tuple/from (to-array key))))
 
-(defn decode-int
-  [value]
-  (.getInt (ByteBuffer/wrap value)))
-
-(defn bytes-to-str
+(defn bytes->key
   [bytes]
-  (apply str (map char bytes)))
+  (.getItems (Tuple/fromBytes (.getKey bytes))))
+
+(defn bytes->value
+  [bytes]
+  (.get (Tuple/fromBytes (.getValue bytes)) 0))

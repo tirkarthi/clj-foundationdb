@@ -1,52 +1,40 @@
 (ns clj-foundationdb.core
-  (:import (com.apple.foundationdb Database)
-           (com.apple.foundationdb FDB)
-           (com.apple.foundationdb Range)
-           (com.apple.foundationdb KeySelector)
-           (com.apple.foundationdb.tuple Tuple)
-           (java.nio ByteBuffer))
   (:require [clojure.spec.alpha :as spec]
-            [clj-foundationdb.utils :refer :all]))
-
+            [clj-foundationdb.utils :refer :all])
+  (:import (com.apple.foundationdb Database
+                                   FDB
+                                   Range
+                                   KeySelector
+                                   Transaction)
+           (com.apple.foundationdb.tuple Tuple)
+           (java.util List)))
 
 (spec/def ::db #(instance? com.apple.foundationdb.Database %1))
+(spec/def ::serializable #(or (number? %1)
+                              (string? %1)
+                              (decimal? %1)
+                              (instance? List %1)))
 
 (defn get-val
-  "Set a value for the key
+  "Get the value for the collection of keys as tuple
 
   (let [fd  (. FDB selectAPIVersion 510)
         key \"foo\"]
   (with-open [db (.open fd)]
      (get-val db key)))
- "
+  "
   [db key]
   (.run db
         (reify
           java.util.function.Function
           (apply [this tr]
-            (let [key   (.getBytes key)
-                  value @(.get tr key)]
-              (if value
-                (bytes-to-str value)))))))
+            (let [key   (key->tuple [key])]
+              (if-let [value @(.get tr key)]
+                (.get (Tuple/fromBytes value) 0)))))))
 
 (spec/fdef get-val
-           :args (spec/cat :db ::db :key string?)
-           :ret (spec/nilable string?))
-
-(defn get-tuple-val
-  "Get the value for the collection of keys as tuple"
-  [db key]
-  (.run db
-        (reify
-          java.util.function.Function
-          (apply [this tr]
-            (let [key   (.pack (Tuple/from (to-array key)))]
-              (if-let [value @(.get tr key)]
-                (.getString (Tuple/fromBytes value) 0)))))))
-
-(spec/fdef get-tuple-val
-           :args (spec/cat :db ::db :key (spec/coll-of string?))
-           :ret (spec/nilable string?))
+           :args (spec/cat :db ::db :key ::serializable)
+           :ret (spec/nilable ::serializable))
 
 (defn set-val
   "Set a value for the key
@@ -62,38 +50,13 @@
         (reify
           java.util.function.Function
           (apply [this tr]
-            (let [key   (.getBytes key)
-                  value (.getBytes value)]
+            (let [key   (key->tuple [key])
+                  value (key->tuple [value])]
               (.set tr key value))))))
 
 (spec/fdef set-val
-           :args (spec/cat :db ::db :key string? :value string?)
+           :args (spec/cat :db ::db :key ::serializable :value ::serializable)
            :ret (spec/nilable string?))
-
-(defn set-tuple-val
-  "Set a value for the collection of keys with tuple"
-  [db key value]
-  (.run db
-        (reify
-          java.util.function.Function
-          (apply [this tr]
-            (let [key   (.pack (Tuple/from (to-array key)))
-                  value (.pack (Tuple/from (to-array [value])))]
-              (.set tr key value))))))
-
-(defn set-tuple-vals
-  "Set a value for the collection of keys with tuple"
-  [db keys value]
-  (.run db
-        (reify
-          java.util.function.Function
-          (apply [this tr]
-            (let [keys  (map #(.pack (Tuple/from (to-array %1))) keys)
-                  value (.pack (Tuple/from (to-array [value])))]
-              (doall (map #(.set tr %1 value) keys)))))))
-
-(spec/fdef set-val
-           :args (spec/cat :db ::db :key (spec/coll-of string?) :value string?))
 
 (defn set-keys
   "Set given keys with the value
@@ -109,12 +72,12 @@
         (reify
           java.util.function.Function
           (apply [this tr]
-            (let [keys  (map #(.getBytes %1) keys)
-                  value (.getBytes value)]
+            (let [keys  (map #(key->tuple [%1]) keys)
+                  value (key->tuple [value])]
               (doall (map #(.set tr %1 value) keys)))))))
 
 (spec/fdef set-keys
-           :args (spec/cat :db ::db :key (spec/coll-of string?) :value string?))
+           :args (spec/cat :db ::db :key (spec/coll-of ::serializable) :value ::serializable))
 
 (defn clear-key
   "Clear a key from the database
@@ -129,24 +92,11 @@
         (reify
           java.util.function.Function
           (apply [this tr]
-            (let [key (.getBytes key)]
+            (let [key (key->tuple [key])]
               (.clear tr key))))))
 
 (spec/fdef clear-key
-           :args (spec/cat :db ::db :key string?))
-
-(defn clear-tuple-key
-  "Clear a key from the database"
-  [db key]
-  (.run db
-        (reify
-          java.util.function.Function
-          (apply [this tr]
-            (let [key (.pack (Tuple/from (to-array [key])))]
-              (.clear tr key))))))
-
-(spec/fdef clear-tuple-key
-           :args (spec/cat :db ::db :key (spec/coll-of string?)))
+           :args (spec/cat :db ::db :key ::serializable))
 
 (defn get-range-startswith
   "Get a range of key values as a vector that starts with prefix
@@ -161,12 +111,12 @@
         (reify
           java.util.function.Function
           (apply [this tr]
-            (let [prefix (.getBytes prefix)
-                  r     (Range/startsWith prefix)]
-              (->> (.getRange tr r)
+            (let [prefix      (key->tuple [prefix])
+                  range-query (Range/startsWith prefix)]
+              (->> (.join (.asList (.getRange tr range-query)))
                    (mapv #(vector
-                           (bytes-to-str (.getKey %1))
-                           (bytes-to-str (.getValue %1))))))))))
+                           (bytes->key %1)
+                           (bytes->value %1)))))))))
 
 (spec/fdef get-range-startswith
            :args (spec/cat :db ::db :prefix string?))
@@ -181,24 +131,7 @@
               (.watch tr key))))))
 
 (spec/fdef watch
-           :args (spec/cat :db ::db :key string?))
-
-(defn get-tuple-range-startswith
-  "Get a range of key values as a vector that starts with prefix"
-  [db prefix]
-  (.run db
-        (reify
-          java.util.function.Function
-          (apply [this tr]
-            (let [prefix (.pack (Tuple/from (to-array prefix)))
-                  r      (Range/startsWith prefix)]
-              (->> (.getRange tr r)
-                   (mapv #(vector
-                           (bytes-to-str (.getKey %1))
-                           (bytes-to-str (.getValue %1))))))))))
-
-(spec/fdef get-tuple-range-startswith
-           :args (spec/cat :db ::db :prefix string?))
+           :args (spec/cat :db ::db :key ::serializable))
 
 (defn get-range
   "Get a range of key values as a vector
@@ -214,13 +147,13 @@
         (reify
           java.util.function.Function
           (apply [this tr]
-            (let [begin (.getBytes begin)
-                  end   (.getBytes end)
-                  r     (Range. begin end)]
-              (->> (.getRange tr r)
+            (let [begin       (key->tuple [begin])
+                  end         (key->tuple [end])
+                  range-query (Range. begin end)]
+              (->> (.getRange tr range-query)
                    (mapv #(vector
-                           (bytes-to-str (.getKey %1))
-                           (bytes-to-str (.getValue %1))))))))))
+                           (bytes->key %1)
+                           (bytes->value %1)))))))))
 
 (spec/fdef get-range
            :args (spec/cat :db ::db :begin string? :end string?))
@@ -250,8 +183,8 @@
         (reify
           java.util.function.Function
           (apply [this tr]
-            (let [begin (.getBytes begin)
-                  end   (.getBytes end)]
+            (let [begin (key->tuple [begin])
+                  end   (key->tuple [end])]
               (.clear tr (Range. begin end)))))))
 
 (spec/fdef clear-range
@@ -290,16 +223,16 @@
          (reify
            java.util.function.Function
            (apply [this tr]
-             (let [key (KeySelector/lastLessThan (.getBytes key))
-                   end (.add key limit)
+             (let [key         (KeySelector/lastLessThan (key->tuple [key]))
+                   end         (.add key limit)
                    range-query (.getRange tr key end)]
                (->> range-query
                     (mapv #(vector
-                            (bytes-to-str (.getKey %1))
-                            (bytes-to-str (.getValue %1)))))))))))
+                            (bytes->key %1)
+                            (bytes->value %1))))))))))
 
 (spec/fdef last-less-than
-           :args (spec/cat :db ::db :key string? :limit (spec/? pos-int?))
+           :args (spec/cat :db ::db :key ::serializable :limit (spec/? pos-int?))
            :ret (spec/tuple string? number?))
 
 (defn last-less-or-equal
@@ -317,16 +250,16 @@
          (reify
            java.util.function.Function
            (apply [this tr]
-             (let [key (KeySelector/lastLessOrEqual (.getBytes key))
-                   end (.add key limit)
+             (let [key         (KeySelector/lastLessOrEqual (key->tuple [key]))
+                   end         (.add key limit)
                    range-query (.getRange tr key end)]
                (->> range-query
                     (mapv #(vector
-                            (bytes-to-str (.getKey %1))
-                            (bytes-to-str (.getValue %1)))))))))))
+                            (bytes->key %1)
+                            (bytes->value %1))))))))))
 
 (spec/fdef last-less-or-equal
-           :args (spec/cat :db ::db :key string? :limit (spec/? pos-int?))
+           :args (spec/cat :db ::db :key ::serializable :limit (spec/? pos-int?))
            :ret (spec/tuple string? number?))
 
 (defn first-greater-than
@@ -344,16 +277,16 @@
          (reify
            java.util.function.Function
            (apply [this tr]
-             (let [key (KeySelector/firstGreaterThan (.getBytes key))
-                   end (.add key limit)
+             (let [key         (KeySelector/firstGreaterThan (key->tuple [key]))
+                   end         (.add key limit)
                    range-query (.getRange tr key end)]
                (->> range-query
                     (mapv #(vector
-                            (bytes-to-str (.getKey %1))
-                            (bytes-to-str (.getValue %1)))))))))))
+                            (bytes->key %1)
+                            (bytes->value %1))))))))))
 
 (spec/fdef first-greater-than
-           :args (spec/cat :db ::db :key string? :limit (spec/? pos-int?))
+           :args (spec/cat :db ::db :key ::serializable :limit (spec/? pos-int?))
            :ret (spec/tuple string? number?))
 
 (defn first-greater-or-equal
@@ -371,14 +304,14 @@
          (reify
            java.util.function.Function
            (apply [this tr]
-             (let [key (KeySelector/firstGreaterOrEqual (.getBytes key))
-                   end (.add key limit)
+             (let [key         (KeySelector/firstGreaterOrEqual (key->tuple [key]))
+                   end         (.add key limit)
                    range-query (.getRange tr key end)]
                (->> range-query
                     (mapv #(vector
-                            (bytes-to-str (.getKey %1))
-                            (bytes-to-str (.getValue %1)))))))))))
+                            (bytes->key %1)
+                            (bytes->value %1))))))))))
 
 (spec/fdef first-greater-or-equal
-           :args (spec/cat :db ::db :key string? :limit (spec/? pos-int?))
+           :args (spec/cat :db ::db :key ::serializable :limit (spec/? pos-int?))
            :ret (spec/tuple string? number?))

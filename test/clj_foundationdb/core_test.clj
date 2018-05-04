@@ -27,13 +27,13 @@
       (with-open [db (.open fd)]
         (is (nil? (get-val db key)))
         (set-val db key value)
-        (is (= (get-val db key)) value)))))
+        (is (= (get-val db key) value))))))
 
 (deftest test-multiple-set
   (testing "Test multiple set"
     (let [fd (. FDB selectAPIVersion 510)
           keys ["foo" "for"]
-          expected-keys ["bar" "bar1" "bar2" "car" "foo" "for"]
+          expected-keys (seq ["bar" "bar1" "bar2" "car" "foo" "for"])
           value "1"]
       (with-open [db (.open fd)]
         (set-keys db keys value)
@@ -41,10 +41,10 @@
 
   (testing "Test get all keys"
     (let [fd (. FDB selectAPIVersion 510)
-          keys ["bar" "bar1" "bar2" "car" "foo" "for"]
+          keys (seq ["bar" "bar1" "bar2" "car" "foo" "for"])
           value "1"]
       (with-open [db (.open fd)]
-        (let [returned-keys (map first (get-all db))]
+        (let [returned-keys (mapcat first (get-all db))]
           (is (= keys returned-keys))
           (is (every? #(= (get-val db %1) value) keys)))))))
 
@@ -54,17 +54,17 @@
           prefix "b"
           value "1"]
       (with-open [db (.open fd)]
-        (let [keys (map first (get-range db "b" "bar2"))]
+        (let [keys (mapcat first (get-range db "b" "bar2"))]
           (is (= '("bar" "bar1") keys))
           (is (every? #(= (get-val db %1) value) keys)))))))
 
 (deftest test-get-range-starts-with
   (testing "Test get all keys with prefix"
     (let [fd (. FDB selectAPIVersion 510)
-          prefix "c"
+          prefix "car"
           value "1"]
       (with-open [db (.open fd)]
-        (let [keys (map first (get-range-startswith db prefix))]
+        (let [keys (mapcat first (get-range-startswith db prefix))]
           (is (= '("car") keys))
           (is (every? #(= (get-val db %1) value) keys)))))))
 
@@ -75,7 +75,7 @@
           value "1"
           expected-keys '("bar")]
       (with-open [db (.open fd)]
-        (let [keys (map first (last-less-than db key))]
+        (let [keys (mapcat first (last-less-than db key))]
           (is (= expected-keys keys))
           (is (every? #(= (get-val db %1) value) keys)))))))
 
@@ -86,7 +86,7 @@
           value "1"
           expected-keys '("bar1")]
       (with-open [db (.open fd)]
-        (let [keys (map first (last-less-or-equal db key))]
+        (let [keys (mapcat first (last-less-or-equal db key))]
           (is (= expected-keys keys))
           (is (every? #(= (get-val db %1) value) keys)))))))
 
@@ -97,7 +97,7 @@
           value "1"
           expected-keys '("bar1")]
       (with-open [db (.open fd)]
-        (let [keys (map first (first-greater-than db key))]
+        (let [keys (mapcat first (first-greater-than db key))]
           (is (= expected-keys keys))
           (is (every? #(= (get-val db %1) value) keys))))))
 
@@ -108,7 +108,7 @@
           limit 2
           expected-keys '("bar1" "bar2")]
       (with-open [db (.open fd)]
-        (let [keys (map first (first-greater-than db key limit))]
+        (let [keys (mapcat first (first-greater-than db key limit))]
           (is (= expected-keys keys))
           (is (every? #(= (get-val db %1) value) keys))))))
 
@@ -127,7 +127,7 @@
           value "1"
           expected-keys '("bar")]
       (with-open [db (.open fd)]
-        (let [keys (map first (first-greater-or-equal db key))]
+        (let [keys (mapcat first (first-greater-or-equal db key))]
           (is (= expected-keys keys))
           (is (every? #(= (get-val db %1) value) keys))))))
 
@@ -138,7 +138,7 @@
           limit 2
           expected-keys '("bar" "bar1")]
       (with-open [db (.open fd)]
-        (let [keys (map first (first-greater-or-equal db key limit))]
+        (let [keys (mapcat first (first-greater-or-equal db key limit))]
           (is (= expected-keys keys))
           (is (every? #(= (get-val db %1) value) keys)))))))
 
