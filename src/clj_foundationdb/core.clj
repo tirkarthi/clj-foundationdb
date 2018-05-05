@@ -9,11 +9,14 @@
            (com.apple.foundationdb.tuple Tuple)
            (java.util List)))
 
-(spec/def ::db #(instance? com.apple.foundationdb.Database %1))
-(spec/def ::serializable #(or (number? %1)
-                              (string? %1)
-                              (decimal? %1)
-                              (instance? List %1)))
+(def db? #(instance? com.apple.foundationdb.Database %1))
+
+;; Refer https://github.com/apple/foundationdb/blob/e0c8175f3ccad92c582a3e70e9bcae58fff53633/bindings/java/src/main/com/apple/foundationdb/tuple/TupleUtil.java#L171
+
+(def serializable? #(or (number? %1)
+                        (string? %1)
+                        (decimal? %1)
+                        (instance? List %1)))
 
 (defn get-val
   "Get the value for the collection of keys as tuple
@@ -28,13 +31,13 @@
         (reify
           java.util.function.Function
           (apply [this tr]
-            (let [key   (key->tuple [key])]
+            (let [key   (key->tuple key)]
               (if-let [value @(.get tr key)]
                 (.get (Tuple/fromBytes value) 0)))))))
 
 (spec/fdef get-val
-           :args (spec/cat :db ::db :key ::serializable)
-           :ret (spec/nilable ::serializable))
+           :args (spec/cat :db db? :key serializable?)
+           :ret (spec/nilable serializable?))
 
 (defn set-val
   "Set a value for the key
@@ -55,7 +58,7 @@
               (.set tr key value))))))
 
 (spec/fdef set-val
-           :args (spec/cat :db ::db :key ::serializable :value ::serializable)
+           :args (spec/cat :db db? :key serializable? :value serializable?)
            :ret (spec/nilable string?))
 
 (defn set-keys
@@ -72,12 +75,12 @@
         (reify
           java.util.function.Function
           (apply [this tr]
-            (let [keys  (map #(key->tuple [%1]) keys)
+            (let [keys  (map #(key->tuple %1) keys)
                   value (key->tuple [value])]
-              (doall (map #(.set tr %1 value) keys)))))))
+              (doseq [key keys] (.set tr key value)))))))
 
 (spec/fdef set-keys
-           :args (spec/cat :db ::db :key (spec/coll-of ::serializable) :value ::serializable))
+           :args (spec/cat :db db? :key (spec/coll-of serializable?) :value serializable?))
 
 (defn clear-key
   "Clear a key from the database
@@ -96,7 +99,7 @@
               (.clear tr key))))))
 
 (spec/fdef clear-key
-           :args (spec/cat :db ::db :key ::serializable))
+           :args (spec/cat :db db? :key serializable?))
 
 (defn get-range-startswith
   "Get a range of key values as a vector that starts with prefix
@@ -113,13 +116,11 @@
           (apply [this tr]
             (let [prefix      (key->tuple [prefix])
                   range-query (Range/startsWith prefix)]
-              (->> (.join (.asList (.getRange tr range-query)))
-                   (mapv #(vector
-                           (bytes->key %1)
-                           (bytes->value %1)))))))))
+              (->> (.getRange tr range-query)
+                   range->kv))))))
 
 (spec/fdef get-range-startswith
-           :args (spec/cat :db ::db :prefix string?))
+           :args (spec/cat :db db? :prefix string?))
 
 (defn watch
   [db key]
@@ -131,7 +132,7 @@
               (.watch tr key))))))
 
 (spec/fdef watch
-           :args (spec/cat :db ::db :key ::serializable))
+           :args (spec/cat :db db? :key serializable?))
 
 (defn get-range
   "Get a range of key values as a vector
@@ -142,21 +143,26 @@
   (with-open [db (.open fd)]
      (get-range db begin end)))
   "
-  [db begin end]
-  (.run db
-        (reify
-          java.util.function.Function
-          (apply [this tr]
-            (let [begin       (key->tuple [begin])
-                  end         (key->tuple [end])
-                  range-query (Range. begin end)]
-              (->> (.getRange tr range-query)
-                   (mapv #(vector
-                           (bytes->key %1)
-                           (bytes->value %1)))))))))
+  ([db begin]
+   (.run db
+         (reify
+           java.util.function.Function
+           (apply [this tr]
+             (let [begin       (Tuple/from (to-array (if (sequential? begin) begin [begin])))
+                   range-query (.getRange tr (.range begin))]
+               (range->kv range-query))))))
+  ([db begin end]
+   (.run db
+         (reify
+           java.util.function.Function
+           (apply [this tr]
+             (let [begin       (key->tuple [begin])
+                   end         (key->tuple [end])
+                   range-query (.getRange tr (Range. begin end))]
+               (range->kv range-query)))))))
 
 (spec/fdef get-range
-           :args (spec/cat :db ::db :begin string? :end string?))
+           :args (spec/cat :db db? :begin string? :end string?))
 
 ;; https://stackoverflow.com/a/21421524/2610955
 ;; Refer : https://forums.foundationdb.org/t/how-to-clear-all-keys-in-foundationdb-using-java/351/2
@@ -173,6 +179,9 @@
                   range-query (.getRange tr (Range. begin end))]
               (range->kv range-query))))))
 
+(spec/fdef get-all
+           :args (spec/cat :db db?))
+
 (defn clear-range
   "Clear a range of keys from the database
 
@@ -187,12 +196,12 @@
         (reify
           java.util.function.Function
           (apply [this tr]
-            (let [begin (key->tuple [begin])
-                  end   (key->tuple [end])]
+            (let [begin (key->tuple begin)
+                  end   (key->tuple end)]
               (.clear tr (Range. begin end)))))))
 
 (spec/fdef clear-range
-           :args (spec/cat :db ::db :begin string? :end string?))
+           :args (spec/cat :db db? :begin string? :end string?))
 
 ;; https://stackoverflow.com/a/21421524/2610955
 ;; Refer : https://forums.foundationdb.org/t/how-to-clear-all-keys-in-foundationdb-using-java/351/2
@@ -229,13 +238,10 @@
              (let [key         (KeySelector/lastLessThan (key->tuple [key]))
                    end         (.add key limit)
                    range-query (.getRange tr key end)]
-               (->> range-query
-                    (mapv #(vector
-                            (bytes->key %1)
-                            (bytes->value %1))))))))))
+               (range->kv range-query)))))))
 
 (spec/fdef last-less-than
-           :args (spec/cat :db ::db :key ::serializable :limit (spec/? pos-int?))
+           :args (spec/cat :db db? :key serializable? :limit (spec/? pos-int?))
            :ret (spec/tuple string? number?))
 
 (defn last-less-or-equal
@@ -256,13 +262,10 @@
              (let [key         (KeySelector/lastLessOrEqual (key->tuple [key]))
                    end         (.add key limit)
                    range-query (.getRange tr key end)]
-               (->> range-query
-                    (mapv #(vector
-                            (bytes->key %1)
-                            (bytes->value %1))))))))))
+               (range->kv range-query)))))))
 
 (spec/fdef last-less-or-equal
-           :args (spec/cat :db ::db :key ::serializable :limit (spec/? pos-int?))
+           :args (spec/cat :db db? :key serializable? :limit (spec/? pos-int?))
            :ret (spec/tuple string? number?))
 
 (defn first-greater-than
@@ -283,13 +286,10 @@
              (let [key         (KeySelector/firstGreaterThan (key->tuple [key]))
                    end         (.add key limit)
                    range-query (.getRange tr key end)]
-               (->> range-query
-                    (mapv #(vector
-                            (bytes->key %1)
-                            (bytes->value %1))))))))))
+               (range->kv range-query)))))))
 
 (spec/fdef first-greater-than
-           :args (spec/cat :db ::db :key ::serializable :limit (spec/? pos-int?))
+           :args (spec/cat :db db? :key serializable? :limit (spec/? pos-int?))
            :ret (spec/tuple string? number?))
 
 (defn first-greater-or-equal
@@ -310,11 +310,8 @@
              (let [key         (KeySelector/firstGreaterOrEqual (key->tuple [key]))
                    end         (.add key limit)
                    range-query (.getRange tr key end)]
-               (->> range-query
-                    (mapv #(vector
-                            (bytes->key %1)
-                            (bytes->value %1))))))))))
+               (range->kv range-query)))))))
 
 (spec/fdef first-greater-or-equal
-           :args (spec/cat :db ::db :key ::serializable :limit (spec/? pos-int?))
-           :ret (spec/tuple string? number?))
+           :args (spec/cat :db db? :key serializable? :limit (spec/? pos-int?))
+           :ret (spec/coll-of (spec/tuple serializable? serializable?)))
