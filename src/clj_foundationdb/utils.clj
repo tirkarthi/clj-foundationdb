@@ -24,7 +24,7 @@
   [bytes]
   (let [key (.getKey bytes)]
     (try
-      (.getItems (Tuple/fromBytes key))
+      (vec (.getItems (Tuple/fromBytes key)))
       (catch IllegalArgumentException e (bytes-to-str key)))))
 
 (defn bytes->value
