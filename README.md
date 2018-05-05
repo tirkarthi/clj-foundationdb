@@ -6,7 +6,7 @@ A Clojure wrapper for FoundationDB
 
 At the moment I cannot publish it in Clojars since the java driver was not yet released in Maven or other repo to use it as a dependency. You can clone the repo and install the java library through lein [localrepo](https://github.com/kumarshantanu/lein-localrepo) to use it.
 
-### Install FoundationDB jar
+### Installation of FoundationDB jar
 
 Since FoundationDB is not present in the Maven repo I am using lein localrepo for installing the jar and using it in the project.
 
@@ -25,6 +25,48 @@ Docs are available at https://tirkarthi.github.io/clj-foundationdb
 I am also trying to port a class scheduling app to Clojure using the library. Currently the API is still in a lot of fluctuation and hence the examples might not work but you can view the source.
 
 Reference implementation in Java : https://apple.github.io/foundationdb/class-scheduling-java.html
+
+## Transaction basic example
+
+A basic example of the transactional nature of FoundationDB can be explained as below :
+
+* Set a key "foo" with value "1" and inside the transaction the value is set as "1"
+* Try changing the value to "2". You can see that inside the transaction the value of "foo" is "2" once it's changed. But when there is an exception the value is rolled back to "1"
+* Get the value of "foo" and it should return "1" since the previous transaction aborted with an exception and hence the value is not updated
+
+```
+clj-foundationdb.core> (let [fd    (. FDB selectAPIVersion 510)
+                             key   "foo"
+                             value "1"]
+                         (with-open [db (.open fd)]
+                           (tr! db
+                                (set-val tr key value)
+                                (get-val tr key))))
+
+1
+
+clj-foundationdb.core> (let [fd    (. FDB selectAPIVersion 510)
+                             key   "foo"
+                             value "2"]
+                         (with-open [db (.open fd)]
+                           (tr! db
+                                (println (get-val tr key))
+                                (set-val tr key value)
+                                (println (get-val tr key))
+                                (/ 1 0))))
+
+1
+2
+ArithmeticException Divide by zero  clojure.lang.Numbers.divide (Numbers.java:163)
+
+clj-foundationdb.core> (let [fd    (. FDB selectAPIVersion 510)
+                             key   "foo"
+                             value "1"]
+                         (with-open [db (.open fd)]
+                           (tr! db
+                                (get-val tr key))))
+1
+```
 
 ## Stability
 
@@ -64,11 +106,11 @@ Hardware:
 ### FoundationDB single writes
 
 ```
-(let [fd (. FDB selectAPIVersion 510)
-      key "foo"
+(let [fd    (. FDB selectAPIVersion 510)
+      key   "foo"
       value "1"]
       (with-open [db (.open fd)]
-	        (quick-bench (doall (for [_ (range 100)] (.run db (set-val key value)))))))
+	        (quick-bench (doall (for [_ (range 100)] (tr! db (set-val tr key value)))))))
 Evaluation count : 6 in 6 samples of 1 calls.
              Execution time mean : 1.845528 sec
     Execution time std-deviation : 58.156807 ms
@@ -87,18 +129,15 @@ Found 1 outliers in 6 samples (16.6667 %)
 ```
 (defn set-val-n
   "Set a value for the key"
-  [key value n]
-  (reify
-    java.util.function.Function
-    (apply [this tr]
-      (dotimes [_ n]
-          (.set tr key value)))))
+  [tr key value n]
+  (dotimes [_ n]
+     (.set tr key value)))
 
 clj-foundationdb.core> (let [fd (. FDB selectAPIVersion 510)
                              key (.getBytes "foo")
                              value (.getBytes "10000")]
                          (with-open [db (.open fd)]
-                           (quick-bench (.run db (set-val-n key value 100000)))))
+                           (quick-bench (tr! db (set-val-n tr key value 100000)))))
 Evaluation count : 6 in 6 samples of 1 calls.
              Execution time mean : 625.745197 ms
     Execution time std-deviation : 72.918243 ms
@@ -109,6 +148,8 @@ Evaluation count : 6 in 6 samples of 1 calls.
 ```
 
 ### Redis
+
+Do note that the timings are with Parallel clients for Redis. I am just adding this a reference and it will be much better to add parallel client numbers for FoundationDB too. You can find some numbers for FoundationDB [here](https://apple.github.io/foundationdb/benchmarking.html)
 
 ```
 ➜  redis git:(unstable) redis-benchmark -t set
