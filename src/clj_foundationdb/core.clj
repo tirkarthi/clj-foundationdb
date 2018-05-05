@@ -159,15 +159,19 @@
            :args (spec/cat :db ::db :begin string? :end string?))
 
 ;; https://stackoverflow.com/a/21421524/2610955
-;; TODO: Unfortunately this doesn't seem to work and only retrives until keys prefixing x
+;; Refer : https://forums.foundationdb.org/t/how-to-clear-all-keys-in-foundationdb-using-java/351/2
 
 (defn get-all
   "Get all key values as a vector"
   [db]
-  (get-range db "" "xFF"))
-
-(spec/fdef clear-all
-           :args (spec/cat :db ::db))
+  (.run db
+        (reify
+          java.util.function.Function
+          (apply [this tr]
+            (let [begin       (byte-array [])
+                  end         (byte-array [0xFF])
+                  range-query (.getRange tr (Range. begin end))]
+              (range->kv range-query))))))
 
 (defn clear-range
   "Clear a range of keys from the database
@@ -191,22 +195,21 @@
            :args (spec/cat :db ::db :begin string? :end string?))
 
 ;; https://stackoverflow.com/a/21421524/2610955
-;; TODO: Unfortunately this doesn't seem to work and only deletes till keys prefixing x
+;; Refer : https://forums.foundationdb.org/t/how-to-clear-all-keys-in-foundationdb-using-java/351/2
 
 (defn clear-all
-  "Clear all the keys and values
-
-  (let [fd (. FDB selectAPIVersion 510)]
-  (with-open [db (.open fd)]
-     (clear-all db)))
-  "
+  "Clear all  keys from the database"
   [db]
-  (let [begin ""
-        end   "xFF"]
-    (clear-range db begin end)))
+  (.run db
+        (reify
+          java.util.function.Function
+          (apply [this tr]
+            (let [begin (byte-array [])
+                  end   (byte-array [0xFF])]
+              (.clear tr (Range. begin end)))))))
 
 (spec/fdef clear-all
-           :args (spec/cat :db ::db))
+           :args (spec/cat :db db?))
 
 (defn last-less-than
   "Returns key and value pairs with keys less than the given key for the given limit
