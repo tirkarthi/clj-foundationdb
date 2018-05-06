@@ -22,7 +22,7 @@ GitHub issue : https://github.com/apple/foundationdb/issues/219
 
 Docs are available at https://tirkarthi.github.io/clj-foundationdb
 
-I am also trying to port a class scheduling app to Clojure using the library. Currently the API is still in a lot of fluctuation and hence the examples might not work but you can view the source.
+I am also trying to port a class scheduling app to Clojure using the library. Currently the API is still in a lot of fluctuation and hence the examples might not work but you can view the source at examples folder.
 
 Reference implementation in Java : https://apple.github.io/foundationdb/class-scheduling-java.html
 
@@ -34,7 +34,7 @@ A basic example of the transactional nature of FoundationDB can be explained as 
 * Try changing the value to "2". You can see that inside the transaction the value of "foo" is "2" once it's changed. But when there is an exception the value is rolled back to "1"
 * Get the value of "foo" and it should return "1" since the previous transaction aborted with an exception and hence the value is not updated
 
-```
+```clojure
 clj-foundationdb.core> (let [fd    (. FDB selectAPIVersion 510)
                              key   "foo"
                              value "1"]
