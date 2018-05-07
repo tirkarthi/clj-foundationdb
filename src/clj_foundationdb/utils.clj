@@ -10,11 +10,18 @@
 
 (defn key->tuple
   "
-  Pack the key with respect to Tuple encoding
+  Return tuple encoding for the given key
   "
   [key]
   (let [key (if (sequential? key) key [key])]
-    (.pack (Tuple/from (to-array key)))))
+    (Tuple/from (to-array key))))
+
+(defn key->packed-tuple
+  "
+  Pack the key with respect to Tuple encoding
+  "
+  [key]
+  (.pack (key->tuple key)))
 
 (defn bytes->key
   "

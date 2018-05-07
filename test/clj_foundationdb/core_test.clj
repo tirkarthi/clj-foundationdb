@@ -209,6 +209,29 @@
              (clear-key tr key)
              (is (nil? (get-val tr key))))))))
 
+(deftest test-clear-range
+  (testing "Test clearing range"
+    (let [fd      (. FDB selectAPIVersion 510)
+          in-keys [["foo" "a"] ["foo" "b"]]
+          value   "1"]
+      (with-open [db (.open fd)]
+        (tr! db
+             (set-keys tr in-keys value)
+             (is (every? #(= (get-val tr %1) value) in-keys))
+             (clear-range tr "foo")
+             (is (every? #(nil? (get-val tr %1)) in-keys))))))
+
+  (testing "Test clearing range with begin and end with end being exclusive"
+    (let [fd      (. FDB selectAPIVersion 510)
+          in-keys [["bar" "a"] ["foo" "a"] ["foo" "b"] ["gum" "a"]]
+          value   "1"]
+      (with-open [db (.open fd)]
+        (tr! db
+             (set-keys tr in-keys value)
+             (is (every? #(= (get-val tr %1) value) in-keys))
+             (clear-range tr "bar" "gum")
+             (is (every? #(nil? (get-val tr %1)) (butlast in-keys))))))))
+
 (deftest test-clear-all
   (testing "Test clear all"
     (let [fd    (. FDB selectAPIVersion 510)

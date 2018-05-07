@@ -7,6 +7,7 @@
                                    KeySelector
                                    Transaction)
            (com.apple.foundationdb.tuple Tuple)
+           (com.apple.foundationdb.subspace Subspace)
            (java.util List)))
 
 (def tr? #(instance? com.apple.foundationdb.Database %1))
@@ -47,7 +48,7 @@
           (get-val tr key))))
   "
   [tr key]
-  (let [key   (key->tuple key)]
+  (let [key   (key->packed-tuple key)]
     (if-let [value @(.get tr key)]
       (.get (Tuple/fromBytes value) 0))))
 
@@ -66,8 +67,8 @@
           (set-val tr key value))))
   "
   [tr key value]
-  (let [key   (key->tuple key)
-        value (key->tuple value)]
+  (let [key   (key->packed-tuple key)
+        value (key->packed-tuple value)]
     (.set tr key value)))
 
 (spec/fdef set-val
@@ -84,8 +85,8 @@
      (tr! db (set-keys tr keys value))))
   "
   [tr keys value]
-  (let [keys  (map #(key->tuple %1) keys)
-        value (key->tuple value)]
+  (let [keys  (map #(key->packed-tuple %1) keys)
+        value (key->packed-tuple value)]
     (doseq [key keys] (.set tr key value))))
 
 (spec/fdef set-keys
@@ -100,7 +101,7 @@
      (tr! db (clear-key tr key))))
   "
   [tr key]
-  (let [key (key->tuple key)]
+  (let [key (key->packed-tuple key)]
     (.clear tr key)))
 
 (spec/fdef clear-key
@@ -115,7 +116,7 @@
      (tr! db (get-range-startswith tr key prefix))))
   "
   [tr prefix]
-  (let [prefix      (key->tuple prefix)
+  (let [prefix      (key->packed-tuple prefix)
         range-query (Range/startsWith prefix)]
     (->> (.getRange tr range-query)
          range->kv)))
@@ -145,8 +146,8 @@
          range-query (.getRange tr (.range begin))]
      (range->kv range-query)))
   ([tr begin end]
-   (let [begin       (key->tuple begin)
-         end         (key->tuple end)
+   (let [begin       (key->packed-tuple begin)
+         end         (key->packed-tuple end)
          range-query (.getRange tr (Range. begin end))]
      (range->kv range-query))))
 
@@ -168,7 +169,14 @@
            :args (spec/cat :tr tr?))
 
 (defn clear-range
-  "Clear a range of keys from the database
+  "Clear a range of keys from the database.
+  When only begin is given then the keys with starting with the tuple are cleared.
+  When begin and end are specified then end is exclusive of the range to be cleared.
+
+  (let [fd    (. FDB selectAPIVersion 510)
+        begin \"foo\"]
+  (with-open [db (.open fd)]
+     (tr! db (clear-range tr begin))))
 
   (let [fd    (. FDB selectAPIVersion 510)
         begin \"foo\"
@@ -176,10 +184,13 @@
   (with-open [db (.open fd)]
      (tr! db (clear-range tr begin end))))
   "
-  [tr begin end]
-  (let [begin (key->tuple begin)
-        end   (key->tuple end)]
-    (.clear tr (Range. begin end))))
+  ([tr begin]
+   (let [begin (key->tuple begin)]
+     (.clear tr (.range begin))))
+  ([tr begin end]
+   (let [begin (key->packed-tuple begin)
+         end   (key->packed-tuple end)]
+     (.clear tr (Range. begin end)))))
 
 (spec/fdef clear-range
            :args (spec/cat :tr tr? :begin serializable? :end serializable?))
@@ -208,7 +219,7 @@
   ([tr key]
    (last-less-than tr key 1))
   ([tr key limit]
-   (let [key         (KeySelector/lastLessThan (key->tuple key))
+   (let [key         (KeySelector/lastLessThan (key->packed-tuple key))
          end         (.add key limit)
          range-query (.getRange tr key end)]
      (range->kv range-query))))
@@ -228,7 +239,7 @@
   ([tr key]
    (last-less-or-equal tr key 1))
   ([tr key limit]
-   (let [key         (KeySelector/lastLessOrEqual (key->tuple key))
+   (let [key         (KeySelector/lastLessOrEqual (key->packed-tuple key))
          end         (.add key limit)
          range-query (.getRange tr key end)]
      (range->kv range-query))))
@@ -248,7 +259,7 @@
   ([tr key]
    (first-greater-than tr key 1))
   ([tr key limit]
-   (let [key         (KeySelector/firstGreaterThan (key->tuple key))
+   (let [key         (KeySelector/firstGreaterThan (key->packed-tuple key))
          end         (.add key limit)
          range-query (.getRange tr key end)]
      (range->kv range-query))))
@@ -268,7 +279,7 @@
   ([tr key]
    (first-greater-or-equal tr key 1))
   ([tr key limit]
-   (let [key         (KeySelector/firstGreaterOrEqual (key->tuple key))
+   (let [key         (KeySelector/firstGreaterOrEqual (key->packed-tuple key))
          end         (.add key limit)
          range-query (.getRange tr key end)]
      (range->kv range-query))))
@@ -276,3 +287,16 @@
 (spec/fdef first-greater-or-equal
            :args (spec/cat :tr tr? :key serializable? :limit (spec/? pos-int?))
            :ret (spec/coll-of (spec/tuple serializable? serializable?)))
+
+(defn set-subspace-val
+  "Set a value for the key
+
+  (let [fd  (. FDB selectAPIVersion 510)
+        key \"foo\"]
+  (with-open [db (.open fd)]
+     (get-val db key)))
+  "
+  [tr subspace key value]
+  (.set tr
+        (.pack subspace (Tuple/from (into-array [key])))
+        (.pack (Tuple/from (into-array [value])))))
