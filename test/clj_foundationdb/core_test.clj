@@ -55,13 +55,31 @@
              (is (= (get-val tr key) value)))))))
 
 (deftest test-set
-  (testing "Test simple set"
+  (testing "Test simple set with string"
     (let [fd    (. FDB selectAPIVersion 510)
           key   "foo"
           value "1"]
       (with-open [db (.open fd)]
         (tr! db
              (is (nil? (get-val tr key)))
+             (set-val tr key value)
+             (is (= (get-val tr key) value))))))
+
+  (testing "Test simple set with int"
+    (let [fd    (. FDB selectAPIVersion 510)
+          key   "foo"
+          value 1]
+      (with-open [db (.open fd)]
+        (tr! db
+             (set-val tr key value)
+             (is (= (get-val tr key) value))))))
+
+  (testing "Test simple set with float"
+    (let [fd    (. FDB selectAPIVersion 510)
+          key   "foo"
+          value 1.5]
+      (with-open [db (.open fd)]
+        (tr! db
              (set-val tr key value)
              (is (= (get-val tr key) value)))))))
 
@@ -212,14 +230,16 @@
 (deftest test-clear-range
   (testing "Test clearing range"
     (let [fd      (. FDB selectAPIVersion 510)
-          in-keys [["foo" "a"] ["foo" "b"]]
-          value   "1"]
+          in-keys [["foo" "a"] ["foo" "b"] ["gum" "c"]]
+          value   "1"
+          k       ["gum" "c"]]
       (with-open [db (.open fd)]
         (tr! db
              (set-keys tr in-keys value)
              (is (every? #(= (get-val tr %1) value) in-keys))
              (clear-range tr "foo")
-             (is (every? #(nil? (get-val tr %1)) in-keys))))))
+             (is (every? #(nil? (get-val tr %1)) (butlast in-keys)))
+             (is (= (get-val tr k) value))))))
 
   (testing "Test clearing range with begin and end with end being exclusive"
     (let [fd      (. FDB selectAPIVersion 510)
