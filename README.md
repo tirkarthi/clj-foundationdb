@@ -265,9 +265,45 @@ Evaluation count : 6 in 6 samples of 1 calls.
 
 ```
 
-### Redis
+### FoundationDB write 1 million keys with 10 parallel clients and 100k keys per client
 
-Do note that the timings are with Parallel clients for Redis. I am just adding this a reference and it will be much better to add parallel client numbers for FoundationDB too. You can find some numbers for FoundationDB [here](https://apple.github.io/foundationdb/benchmarking.html)
+1 million keys set in 23.74 seconds
+
+```clojure
+(let [fd (select-api-version 510)
+      kv (map #(vector (str %1) %1) (range 100000))]
+  (time (let [clients (repeatedly 10 #(future
+                                        (with-open [db (open fd)]
+                                          (tr! db
+                                               (doall (doseq [[k v] kv]
+                                                        (set-val tr k v)))))))]
+          (doall (map deref clients))
+          "Finished")))
+"Elapsed time: 23740.242199 msecs"
+"Finished"
+```
+
+### FoundationDB read 100k keys with 10 parallel clients and 10k keys per client
+
+100k keys read took 16.81 seconds
+
+```
+(let [fd (select-api-version 510)
+      kv (map #(vector (str %1) %1) (range 100000))]
+  (time (with-open [db (open fd)]
+          (let [clients (repeatedly 10 #(future
+                                          (tr! db
+                                               (doall (doseq [k (range 10000)]
+                                                        (get-val tr k))))))]
+            (doall (map deref clients)))
+          "Finished")))
+"Elapsed time: 16818.560737 msecs"
+"Finished"
+```
+
+You can find some more numbers for FoundationDB [here](https://apple.github.io/foundationdb/benchmarking.html)
+
+### Redis
 
 ```
 ➜  redis git:(unstable) redis-benchmark -t set
