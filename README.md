@@ -36,10 +36,10 @@ Reference implementation in Java : https://apple.github.io/foundationdb/class-sc
 
 ;; Set a key
 
-(let [fd    (. FDB selectAPIVersion 510)
+(let [fd    (select-api-version 510)
       key   "foo"
       value 1]
-  (with-open [db (.open fd)]
+  (with-open [db (open fd)]
     (tr! db
          (set-val tr key value))))
 
@@ -47,9 +47,9 @@ nil
 
 ;; Get a key
 
-(let [fd    (. FDB selectAPIVersion 510)
+(let [fd    (select-api-version 510)
       key   "foo"]
-  (with-open [db (.open fd)]
+  (with-open [db (open fd)]
     (tr! db
          (get-val tr key))))
 
@@ -57,10 +57,10 @@ nil
 
 ;; Perform multiple operations in a single transaction
 
-(let [fd    (. FDB selectAPIVersion 510)
+(let [fd    (select-api-version 510)
       key   "foo"
       value 1]
-  (with-open [db (.open fd)]
+  (with-open [db (open fd)]
     (tr! db
          (set-val tr key value)
          (get-val tr key))))
@@ -69,10 +69,10 @@ nil
 
 ;; Set multiple keys with same value
 
-(let [fd    (. FDB selectAPIVersion 510)
+(let [fd    (select-api-version 510)
       key   [["bar"] ["car"] ["dar"] ["far"]]
       value 1]
-  (with-open [db (.open fd)]
+  (with-open [db (open fd)]
     (tr! db
          (set-keys tr key value))))
 
@@ -80,10 +80,10 @@ nil
 
 ;; Get a range of keys
 
-(let [fd    (. FDB selectAPIVersion 510)
+(let [fd    (select-api-version 510)
       begin "car"
       end   "far"]
-  (with-open [db (.open fd)]
+  (with-open [db (open fd)]
     (tr! db
          (get-range tr begin end))))
 
@@ -91,8 +91,8 @@ nil
 
 ;; Get all keys
 
-(let [fd    (. FDB selectAPIVersion 510)]
-  (with-open [db (.open fd)]
+(let [fd    (select-api-version 510)]
+  (with-open [db (open fd)]
     (tr! db
          (get-all tr))))
 
@@ -100,9 +100,9 @@ nil
 
 ;; First key less than given key
 
-(let [fd    (. FDB selectAPIVersion 510)
+(let [fd    (select-api-version 510)
       key   "car"]
-  (with-open [db (.open fd)]
+  (with-open [db (open fd)]
     (tr! db
          (last-less-than tr key))))
 
@@ -110,9 +110,9 @@ nil
 
 ;; First key greater than given key
 
-(let [fd    (. FDB selectAPIVersion 510)
+(let [fd    (select-api-version 510)
       key   "car"]
-  (with-open [db (.open fd)]
+  (with-open [db (open fd)]
     (tr! db
          (first-greater-than tr key))))
 
@@ -120,22 +120,22 @@ nil
 
 ;; Nested keys
 
-(let [fd      (. FDB selectAPIVersion 510)
+(let [fd      (select-api-version 510)
       classes [["class" "intro"] ["class" "algebra"] ["class" "maths"] ["class" "bio"]]
       time    "10:00"]
-  (with-open [db (.open fd)]
+  (with-open [db (open fd)]
     (tr! db
-         (set-keys tr classes classes time)
+         (set-keys tr classes time)
          (get-val tr ["class" "algebra"]))))
 
 "10:00"
 
 ;; Automatic subspace prefix within a context
 
-(let [fd      (. FDB selectAPIVersion 510)
+(let [fd      (select-api-version 510)
       classes ["intro" "algebra" "maths" "bio"]
       time    "10:00"]
-  (with-open [db (.open fd)]
+  (with-open [db (open fd)]
     (tr! db
          (with-subspace "class"
            (mapv #(set-val tr %1 time) classes)
@@ -153,20 +153,20 @@ A basic example of the transactional nature of FoundationDB can be explained as 
 * Get the value of "foo" and it should return "1" since the previous transaction aborted with an exception and hence the value is not updated
 
 ```clojure
-clj-foundationdb.core> (let [fd    (. FDB selectAPIVersion 510)
+clj-foundationdb.core> (let [fd    (select-api-version 510)
                              key   "foo"
                              value "1"]
-                         (with-open [db (.open fd)]
+                         (with-open [db (open fd)]
                            (tr! db
                                 (set-val tr key value)
                                 (get-val tr key))))
 
 1
 
-clj-foundationdb.core> (let [fd    (. FDB selectAPIVersion 510)
+clj-foundationdb.core> (let [fd    (select-api-version 510)
                              key   "foo"
                              value "2"]
-                         (with-open [db (.open fd)]
+                         (with-open [db (open fd)]
                            (tr! db
                                 (println (get-val tr key))
                                 (set-val tr key value)
@@ -177,10 +177,10 @@ clj-foundationdb.core> (let [fd    (. FDB selectAPIVersion 510)
 2
 ArithmeticException Divide by zero  clojure.lang.Numbers.divide (Numbers.java:163)
 
-clj-foundationdb.core> (let [fd    (. FDB selectAPIVersion 510)
+clj-foundationdb.core> (let [fd    (select-api-version 510)
                              key   "foo"
                              value "1"]
-                         (with-open [db (.open fd)]
+                         (with-open [db (open fd)]
                            (tr! db
                                 (get-val tr key))))
 1
@@ -224,10 +224,10 @@ Hardware:
 ### FoundationDB single writes
 
 ```
-(let [fd    (. FDB selectAPIVersion 510)
+(let [fd    (select-api-version 510)
       key   "foo"
       value "1"]
-      (with-open [db (.open fd)]
+      (with-open [db (open fd)]
 	        (quick-bench (doall (for [_ (range 100)] (tr! db (set-val tr key value)))))))
 Evaluation count : 6 in 6 samples of 1 calls.
              Execution time mean : 1.845528 sec
@@ -251,10 +251,10 @@ Found 1 outliers in 6 samples (16.6667 %)
   (dotimes [_ n]
      (.set tr key value)))
 
-clj-foundationdb.core> (let [fd (. FDB selectAPIVersion 510)
+clj-foundationdb.core> (let [fd (select-api-version 510)
                              key (.getBytes "foo")
                              value (.getBytes "10000")]
-                         (with-open [db (.open fd)]
+                         (with-open [db (open fd)]
                            (quick-bench (tr! db (set-val-n tr key value 100000)))))
 Evaluation count : 6 in 6 samples of 1 calls.
              Execution time mean : 625.745197 ms

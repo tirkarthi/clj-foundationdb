@@ -23,10 +23,10 @@
   "Transaction macro to perform actions. Always use tr for actions inside
   each action since the transaction variable is bound to tr in the functions.
 
-  (let [fd    (. FDB selectAPIVersion 510)
+  (let [fd    (select-api-version 510)
         key   \"foo\"
         value \"bar\"]
-  (with-open [db (.open fd)]
+  (with-open [db (open fd)]
      (tr! db
           (set-val tr key value)
           (get-val tr key))))
@@ -54,10 +54,10 @@
   Sets and gets the keys with the given subspace key prefixed.
   This essentially executes with code binding the given prefix to *subspace*.
 
-  (let [fd    (. FDB selectAPIVersion 510)
+  (let [fd    (select-api-version 510)
         key   \"foo\"
         value \"bar\"]
-    (with-open [db (.open fd)]
+    (with-open [db (open fd)]
       (tr! db
            (clear-all tr)
            (with-subspace \"class\"
@@ -72,9 +72,9 @@
 (defn get-val
   "Get the value for the collection of keys as tuple
 
-  (let [fd  (. FDB selectAPIVersion 510)
+  (let [fd  (select-api-version 510)
         key \"foo\"]
-  (with-open [db (.open fd)]
+  (with-open [db (open fd)]
      (tr! db
           (get-val tr key))))
   "
@@ -91,10 +91,10 @@
 (defn set-val
   "Set a value for the key
 
-  (let [fd    (. FDB selectAPIVersion 510)
+  (let [fd    (select-api-version 510)
         key   \"foo\"
         value \"bar\"]
-  (with-open [db (.open fd)]
+  (with-open [db (open fd)]
      (tr! db
           (set-val tr key value))))
   "
@@ -111,10 +111,10 @@
 (defn set-keys
   "Set given keys with the value
 
-  (let [fd    (. FDB selectAPIVersion 510)
+  (let [fd    (select-api-version 510)
         keys  [\"foo\" \"baz\"]
         value \"bar\"]
-  (with-open [db (.open fd)]
+  (with-open [db (open fd)]
      (tr! db (set-keys tr keys value))))
   "
   [tr keys value]
@@ -128,9 +128,9 @@
 (defn clear-key
   "Clear a key from the database
 
-  (let [fd  (. FDB selectAPIVersion 510)
+  (let [fd  (select-api-version 510)
         key \"foo\"]
-  (with-open [db (.open fd)]
+  (with-open [db (open fd)]
      (tr! db (clear-key tr key))))
   "
   [tr key]
@@ -143,9 +143,9 @@
 (defn get-range-startswith
   "Get a range of key values as a vector that starts with prefix
 
-  (let [fd     (. FDB selectAPIVersion 510)
+  (let [fd     (select-api-version 510)
         prefix \"f\"]
-  (with-open [db (.open fd)]
+  (with-open [db (open fd)]
      (tr! db (get-range-startswith tr key prefix))))
   "
   [tr prefix]
@@ -168,10 +168,10 @@
 (defn get-range
   "Get a range of key values as a vector
 
-  (let [fd    (. FDB selectAPIVersion 510)
+  (let [fd    (select-api-version 510)
         begin \"foo\"
         end   \"foo\"]
-  (with-open [db (.open fd)]
+  (with-open [db (open fd)]
      (tr! db (get-range tr begin end))))
   "
   ([tr begin]
@@ -206,15 +206,15 @@
   When only begin is given then the keys with starting with the tuple are cleared.
   When begin and end are specified then end is exclusive of the range to be cleared.
 
-  (let [fd    (. FDB selectAPIVersion 510)
+  (let [fd    (select-api-version 510)
         begin \"foo\"]
-  (with-open [db (.open fd)]
+  (with-open [db (open fd)]
      (tr! db (clear-range tr begin))))
 
-  (let [fd    (. FDB selectAPIVersion 510)
+  (let [fd    (select-api-version 510)
         begin \"foo\"
         end   \"foo\"]
-  (with-open [db (.open fd)]
+  (with-open [db (open fd)]
      (tr! db (clear-range tr begin end))))
   "
   ([tr begin]
@@ -244,9 +244,9 @@
 (defn last-less-than
   "Returns key and value pairs with keys less than the given key for the given limit
 
-  (let [fd  (. FDB selectAPIVersion 510)
+  (let [fd  (select-api-version 510)
         key \"foo\"]
-  (with-open [db (.open fd)]
+  (with-open [db (open fd)]
      (tr! db (last-less-than tr key))))
   "
   ([tr key]
@@ -264,9 +264,9 @@
 (defn last-less-or-equal
   "Returns key and value pairs with keys less than or equal the given key for the given limit
 
-  (let [fd  (. FDB selectAPIVersion 510)
+  (let [fd  (select-api-version 510)
         key \"foo\"]
-  (with-open [db (.open fd)]
+  (with-open [db (open fd)]
      (tr! db (last-less-or-equal tr key))))
   "
   ([tr key]
@@ -284,9 +284,9 @@
 (defn first-greater-than
   "Returns key and value pairs with keys greater than the given key for the given limit
 
-  (let [fd  (. FDB selectAPIVersion 510)
+  (let [fd  (select-api-version 510)
         key \"foo\"]
-  (with-open [db (.open fd)]
+  (with-open [db (open fd)]
      (tr! db (first-greater-than tr key))))
   "
   ([tr key]
@@ -304,9 +304,9 @@
 (defn first-greater-or-equal
   "Returns key and value pairs with keys greater than or equal to the given key for the given limit
 
-  (let [fd  (. FDB selectAPIVersion 510)
+  (let [fd  (select-api-version 510)
         key \"foo\"]
-  (with-open [db (.open fd)]
+  (with-open [db (open fd)]
      (tr! db (first-greater-or-equal tr key))))
   "
   ([tr key]

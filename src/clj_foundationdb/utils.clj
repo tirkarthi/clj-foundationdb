@@ -1,5 +1,23 @@
 (ns clj-foundationdb.utils
-  (:import (com.apple.foundationdb.tuple Tuple)))
+  (:import (com.apple.foundationdb.tuple Tuple)
+           (com.apple.foundationdb FDB)))
+
+;; https://github.com/vedang/clj_fdb/blob/a52d1e665cc52d83e6370c9d7be4ed040be5b6ec/src/clj_fdb/FDB.clj#L4
+
+(defn select-api-version
+  "
+  Select the version for the client API.
+  "
+  [^Integer version]
+  (FDB/selectAPIVersion version))
+
+(defn open
+  "
+  Initializes networking, connects with the default fdb.cluster file,
+  and opens the database.
+  "
+  [^FDB db]
+  (.open db))
 
 (defn bytes-to-str
   "
