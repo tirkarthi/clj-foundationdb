@@ -26,6 +26,124 @@ I am also trying to port a class scheduling app to Clojure using the library. Cu
 
 Reference implementation in Java : https://apple.github.io/foundationdb/class-scheduling-java.html
 
+## Examples
+
+```clojure
+
+(ns examples.main
+  (:import (com.apple.foundationdb FDB))
+  (:require [clj-foundationdb.core :refer :all]))
+
+;; Set a key
+
+(let [fd    (. FDB selectAPIVersion 510)
+      key   "foo"
+      value 1]
+  (with-open [db (.open fd)]
+    (tr! db
+         (set-val tr key value))))
+
+nil
+
+;; Get a key
+
+(let [fd    (. FDB selectAPIVersion 510)
+      key   "foo"]
+  (with-open [db (.open fd)]
+    (tr! db
+         (get-val tr key))))
+
+1
+
+;; Perform multiple operations in a single transaction
+
+(let [fd    (. FDB selectAPIVersion 510)
+      key   "foo"
+      value 1]
+  (with-open [db (.open fd)]
+    (tr! db
+         (set-val tr key value)
+         (get-val tr key))))
+
+1
+
+;; Set multiple keys with same value
+
+(let [fd    (. FDB selectAPIVersion 510)
+      key   [["bar"] ["car"] ["dar"] ["far"]]
+      value 1]
+  (with-open [db (.open fd)]
+    (tr! db
+         (set-keys tr key value))))
+
+nil
+
+;; Get a range of keys
+
+(let [fd    (. FDB selectAPIVersion 510)
+      begin "car"
+      end   "far"]
+  (with-open [db (.open fd)]
+    (tr! db
+         (get-range tr begin end))))
+
+[[["car"] 1] [["dar"] 1]]
+
+;; Get all keys
+
+(let [fd    (. FDB selectAPIVersion 510)]
+  (with-open [db (.open fd)]
+    (tr! db
+         (get-all tr))))
+
+[[["bar"] 1] [["car"] 1] [["dar"] 1] [["far"] 1] [["foo"] 1]]
+
+;; First key less than given key
+
+(let [fd    (. FDB selectAPIVersion 510)
+      key   "car"]
+  (with-open [db (.open fd)]
+    (tr! db
+         (last-less-than tr key))))
+
+[[["bar"] 1]]
+
+;; First key greater than given key
+
+(let [fd    (. FDB selectAPIVersion 510)
+      key   "car"]
+  (with-open [db (.open fd)]
+    (tr! db
+         (first-greater-than tr key))))
+
+[[["dar"] 1]]
+
+;; Nested keys
+
+(let [fd      (. FDB selectAPIVersion 510)
+      classes [["class" "intro"] ["class" "algebra"] ["class" "maths"] ["class" "bio"]]
+      time    "10:00"]
+  (with-open [db (.open fd)]
+    (tr! db
+         (set-keys tr classes classes time)
+         (get-val tr ["class" "algebra"]))))
+
+"10:00"
+
+;; Automatic subspace prefix within a context
+
+(let [fd      (. FDB selectAPIVersion 510)
+      classes ["intro" "algebra" "maths" "bio"]
+      time    "10:00"]
+  (with-open [db (.open fd)]
+    (tr! db
+         (with-subspace "class"
+           (mapv #(set-val tr %1 time) classes)
+           (get-val tr "algebra")))))
+
+"10:00"
+```
+
 ## Transaction basic example
 
 A basic example of the transactional nature of FoundationDB can be explained as below :
