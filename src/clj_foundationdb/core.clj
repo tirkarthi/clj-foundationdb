@@ -38,6 +38,37 @@
            (apply [this tr]
              ~@actions))))
 
+(def ^:dynamic *subspace* nil)
+
+(defn make-subspace
+  "
+  Returns a key with name as prefix
+
+  (make-subspace [\"class\" \"intro\"] [\"algebra\"]) returns (\"class\" \"intro\" \"algebra\")
+  "
+  [prefix key]
+  (flatten (map vector [prefix key])))
+
+(defmacro with-subspace
+  "
+  Sets and gets the keys with the given subspace key prefixed.
+  This essentially executes with code binding the given prefix to *subspace*.
+
+  (let [fd    (. FDB selectAPIVersion 510)
+        key   \"foo\"
+        value \"bar\"]
+    (with-open [db (.open fd)]
+      (tr! db
+           (clear-all tr)
+           (with-subspace \"class\"
+             (set-val tr key value)
+             (get-val tr key))
+            (nil? (get-val tr key)))))
+  "
+  [prefix & actions]
+  `(binding [*subspace* ~prefix]
+     ~@actions))
+
 (defn get-val
   "Get the value for the collection of keys as tuple
 
@@ -47,8 +78,9 @@
      (tr! db
           (get-val tr key))))
   "
-  [tr key]
-  (let [key   (key->packed-tuple key)]
+  [tr key & {:keys [subspace] :or {subspace *subspace*}}]
+  (let [key   (-> (if subspace (make-subspace subspace key) key)
+                  key->packed-tuple)]
     (if-let [value @(.get tr key)]
       (.get (Tuple/fromBytes value) 0))))
 
@@ -66,8 +98,9 @@
      (tr! db
           (set-val tr key value))))
   "
-  [tr key value]
-  (let [key   (key->packed-tuple key)
+  [tr key value & {:keys [subspace] :or {subspace *subspace*}}]
+  (let [key   (-> (if subspace (make-subspace subspace key) key)
+                  key->packed-tuple)
         value (key->packed-tuple value)]
     (.set tr key value)))
 
@@ -287,16 +320,3 @@
 (spec/fdef first-greater-or-equal
            :args (spec/cat :tr tr? :key serializable? :limit (spec/? pos-int?))
            :ret (spec/coll-of (spec/tuple serializable? serializable?)))
-
-(defn set-subspace-val
-  "Set a value for the key
-
-  (let [fd  (. FDB selectAPIVersion 510)
-        key \"foo\"]
-  (with-open [db (.open fd)]
-     (get-val db key)))
-  "
-  [tr subspace key value]
-  (.set tr
-        (.pack subspace (Tuple/from (into-array [key])))
-        (.pack (Tuple/from (into-array [value])))))

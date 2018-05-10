@@ -152,9 +152,9 @@
 
 (deftest test-get-first-greater-than
   (testing "Test first greater than"
-    (let [fd (. FDB selectAPIVersion 510)
-          key "bar"
-          value "1"
+    (let [fd            (. FDB selectAPIVersion 510)
+          key           "bar"
+          value         "1"
           expected-keys '("bar1")]
       (with-open [db (.open fd)]
         (tr! db
@@ -185,9 +185,9 @@
 
 (deftest test-get-first-greater-or-equal
   (testing "Test first greater or equal"
-    (let [fd (. FDB selectAPIVersion 510)
-          key "bar"
-          value "1"
+    (let [fd            (. FDB selectAPIVersion 510)
+          key           "bar"
+          value         "1"
           expected-keys '("bar")]
       (with-open [db (.open fd)]
         (tr! db
@@ -262,3 +262,31 @@
              (set-val tr key value)
              (clear-all tr)
              (is (empty? (get-all tr))))))))
+
+(deftest test-subspace
+  (testing "Test simple subspace"
+    (let [fd    (. FDB selectAPIVersion 510)
+          key   "foo"
+          value "bar"]
+      (with-open [db (.open fd)]
+        (tr! db
+             (clear-all tr)
+             (with-subspace "class"
+               (set-val tr key value)
+               (is (= (get-val tr key) value)))
+             (is (nil? (get-val tr key)))
+             (is (= (get-all tr) [[["class" "foo"] "bar"]]))))))
+
+  (testing "Test multiple level subspace"
+    (let [fd    (. FDB selectAPIVersion 510)
+          key   "foo"
+          value "bar"]
+      (with-open [db (.open fd)]
+        (tr! db
+             (clear-all tr)
+             (with-subspace ["class" "intro"]
+               (set-val tr key value)
+               (is (= (get-val tr key) value)))
+             (is (nil? (get-val tr key)))
+             (is (= (get-range tr ["class"]) [[["class" "intro" "foo"] "bar"]]))
+             (is (= (get-all tr) [[["class" "intro" "foo"] "bar"]])))))))
