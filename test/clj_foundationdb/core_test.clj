@@ -301,3 +301,15 @@
              (is (nil? (get-val tr key)))
              (is (= (get-range tr ["class"]) [[["class" "intro" "foo"] "bar"]]))
              (is (= (get-all tr) [[["class" "intro" "foo"] "bar"]])))))))
+
+(deftest test-watch
+  (testing "Test watch and callback is called"
+    (let [fd    (select-api-version 510)
+          key    "foo"
+          value  "bar"]
+      (with-open [db (open fd)]
+        (tr! db
+             (clear-key tr key)
+             (let [callback (fn [] :called)]
+               (future (do (Thread/sleep 100) (set-val tr key value)))
+               (is (= :called @(watch tr key callback)))))))))
