@@ -82,7 +82,17 @@
       (with-open [db (open fd)]
         (tr! db
              (set-val tr key value)
-             (is (= (get-val tr key) value)))))))
+             (is (= (get-val tr key) value))))))
+
+  (testing "Test simple set with vector"
+    (let [fd    (select-api-version 510)
+          key   "foo"
+          value [1 2 3]]
+      (with-open [db (open fd)]
+        (tr! db
+             (set-val tr key value)
+             (is (= (get-val tr key) 1))
+             (is (= (get-val tr key :coll true) value)))))))
 
 (deftest test-multiple-set
   (testing "Test multiple set"

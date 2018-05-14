@@ -70,26 +70,42 @@
      ~@actions))
 
 (defn get-val
-  "Get the value for the collection of keys as tuple
+  "Get the value for the given key. Accepts the below :
+
+  :subspace - Subspace to be prefixed
+  :coll     - Boolean to indicate if the value needs to be deserialized as collection
 
   (let [fd  (select-api-version 510)
         key \"foo\"]
   (with-open [db (open fd)]
      (tr! db
           (get-val tr key))))
+
+  (let [fd    (select-api-version 510)
+       key   \"foo\"
+       value [1 2 3]]
+  (with-open [db (open fd)]
+    (tr! db
+         (set-val tr key value)
+         (get-val tr key) ;; 1
+         (get-val tr key :coll true)))) ;; [1 2 3]
   "
-  [tr key & {:keys [subspace] :or {subspace *subspace*}}]
+  [tr key & {:keys [subspace coll] :or {subspace *subspace* coll false}}]
   (let [key   (-> (if subspace (make-subspace subspace key) key)
                   key->packed-tuple)]
     (if-let [value @(.get tr key)]
-      (.get (Tuple/fromBytes value) 0))))
+      (if coll
+        (.getItems (Tuple/fromBytes value))
+        (.get (Tuple/fromBytes value) 0)))))
 
 (spec/fdef get-val
            :args (spec/cat :tr tr? :key serializable?)
            :ret (spec/nilable serializable?))
 
 (defn set-val
-  "Set a value for the key
+  "Set a value for the key. Accepts the below :
+
+  :subspace - Subspace to be prefixed
 
   (let [fd    (select-api-version 510)
         key   \"foo\"
