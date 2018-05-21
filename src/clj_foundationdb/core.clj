@@ -174,12 +174,37 @@
            :args (spec/cat :tr tr? :prefix serializable?))
 
 (defn watch
-  [tr key]
-  (let [key (.getBytes key)]
-    (.watch tr key)))
+  "
+  A key to watch and a callback function to be executed on change. It returns a future object
+  that is realized when there is a change to key. Change in key value or clearing the key
+  is noted as a change. A set statement with the old value is not a change.
+
+  (let [fd    (select-api-version 510)
+       key    \"foo\"
+       value  \"bar\"]
+  (with-open [db (open fd)]
+    (tr! db
+         (clear-key tr key)
+         (watch tr key #(println \"key is set\"))
+         (set-val tr key value)
+         (watch tr key #(println \"key is changed to 1\"))
+         (set-val tr key value) ;; Doesn't trigger watch
+         (set-val tr key \"1\")
+         (watch tr key #(println \"cleared key\"))
+         (clear-key tr key))))
+
+  key is set
+  key is changed to 1
+  cleared key
+  "
+  [tr key callback]
+  (let [key   (key->packed-tuple key)
+        watch (.watch tr key)]
+    (future (do (.join watch)
+                (callback)))))
 
 (spec/fdef watch
-           :args (spec/cat :tr tr? :key serializable?))
+           :args (spec/cat :tr tr? :key serializable? :callback ifn?))
 
 (defn get-range
   "Get a range of key values as a vector
