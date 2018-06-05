@@ -16,8 +16,9 @@ notifications:
     
 jdk:
   - openjdk8
-  - openjdk9
+  - oraclejdk9
   - openjdk10
+  - oraclejdk10
   - openjdk11
   - openjdk-ea
   - oraclejdk-ea
