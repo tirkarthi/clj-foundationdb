@@ -13,6 +13,14 @@ notifications:
   email:
     on_success: never
     on_failure: always
+    
+jdk:
+  - openjdk8
+  - openjdk9
+  - openjdk10
+  - openjdk11
+  - openjdk-ea
+  - oraclejdk-ea
 
 cache:
   directories:
