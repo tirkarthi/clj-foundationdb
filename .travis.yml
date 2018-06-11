@@ -8,6 +8,7 @@ install:
 
 script:
   - lein test
+  - lein codox
 
 notifications:
   email:
@@ -17,3 +18,12 @@ notifications:
 cache:
   directories:
   - $HOME/.m2
+
+deploy:
+  local-dir: docs
+  provider: pages
+  skip-cleanup: true
+  github-token: $GITHUB_TOKEN  # Set in the settings page of your repository, as a secure variable
+  keep-history: true
+  on:
+    branch: master
