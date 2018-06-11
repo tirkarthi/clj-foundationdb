@@ -26,4 +26,4 @@ deploy:
   github-token: $GITHUB_TOKEN  # Set in the settings page of your repository, as a secure variable
   keep-history: true
   on:
-    branch: docs-auto-deploy
+    branch: master
