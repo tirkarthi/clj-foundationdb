@@ -4,7 +4,9 @@ A Clojure wrapper for FoundationDB
 
 ## Documentation
 
-Docs are available at https://tirkarthi.github.io/clj-foundationdb
+cljdoc version : https://cljdoc.xyz/d/xtreak/clj-foundationdb/
+codox version : https://tirkarthi.github.io/clj-foundationdb
+
 
 I am also trying to port a class scheduling app to Clojure using the library. Currently the API is still in a lot of fluctuation and hence the examples might not work but you can view the source at examples folder.
 
