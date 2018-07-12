@@ -5,7 +5,7 @@
   :license {:name "MIT license"
             :url "https://opensource.org/licenses/MIT"}
   :dependencies [[org.clojure/clojure "1.9.0"]
-                 [com.apple.foundationdb/fdb-java "5.1.7"]]
+                 [org.foundationdb/fdb-java "5.2.5"]]
   :profiles {:dev {:dependencies [[org.clojure/test.check "0.9.0"]]
                    :plugins [[lein-codox "0.10.3"]
                              [lein-cljfmt "0.5.7"]]}}
