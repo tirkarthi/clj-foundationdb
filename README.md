@@ -1,10 +1,11 @@
-# clj-foundationdb [![Build Status](https://travis-ci.org/tirkarthi/clj-foundationdb.svg?branch=master)](https://travis-ci.org/tirkarthi/clj-foundationdb) [![Clojars Project](https://img.shields.io/clojars/v/xtreak/clj-foundationdb.svg)](https://clojars.org/xtreak/clj-foundationdb)
+# clj-foundationdb [![Build Status](https://travis-ci.org/tirkarthi/clj-foundationdb.svg?branch=master)](https://travis-ci.org/tirkarthi/clj-foundationdb) [![Clojars Project](https://img.shields.io/clojars/v/xtreak/clj-foundationdb.svg)](https://clojars.org/xtreak/clj-foundationdb) [cljdoc](https://cljdoc.xyz/badge/xtreak/clj-foundationdb)
 
 A Clojure wrapper for FoundationDB
 
 ## Documentation
 
 cljdoc version : https://cljdoc.xyz/d/xtreak/clj-foundationdb/
+
 codox version : https://tirkarthi.github.io/clj-foundationdb
 
 
