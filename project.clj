@@ -10,4 +10,5 @@
                    :plugins [[lein-codox "0.10.3"]
                              [lein-cljfmt "0.5.7"]]}}
   :codox {:output-path "docs"
-          :source-uri "http://github.com/tirkarthi/clj-foundationdb/blob/master/{filepath}#L{line}"})
+          :source-uri "http://github.com/tirkarthi/clj-foundationdb/blob/master/{filepath}#L{line}"
+          :metadata {:doc/format :markdown}})

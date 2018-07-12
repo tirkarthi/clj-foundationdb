@@ -23,6 +23,7 @@
   "Transaction macro to perform actions. Always use tr for actions inside
   each action since the transaction variable is bound to tr in the functions.
 
+  ```
   (let [fd    (select-api-version 520)
         key   \"foo\"
         value \"bar\"]
@@ -30,6 +31,7 @@
      (tr! db
           (set-val tr key value)
           (get-val tr key))))
+  ```
   "
   [db & actions]
   `(.run ~db
@@ -44,7 +46,9 @@
   "
   Returns a key with name as prefix
 
+  ```
   (make-subspace [\"class\" \"intro\"] [\"algebra\"]) returns (\"class\" \"intro\" \"algebra\")
+  ```
   "
   [prefix key]
   (flatten (map vector [prefix key])))
@@ -54,6 +58,7 @@
   Sets and gets the keys with the given subspace key prefixed.
   This essentially executes with code binding the given prefix to *subspace*.
 
+  ```
   (let [fd    (select-api-version 520)
         key   \"foo\"
         value \"bar\"]
@@ -64,6 +69,7 @@
              (set-val tr key value)
              (get-val tr key))
             (nil? (get-val tr key)))))
+  ```
   "
   [prefix & actions]
   `(binding [*subspace* ~prefix]
@@ -75,6 +81,7 @@
   :subspace - Subspace to be prefixed
   :coll     - Boolean to indicate if the value needs to be deserialized as collection
 
+  ```
   (let [fd  (select-api-version 520)
         key \"foo\"]
   (with-open [db (open fd)]
@@ -89,6 +96,7 @@
          (set-val tr key value)
          (get-val tr key) ;; 1
          (get-val tr key :coll true)))) ;; [1 2 3]
+  ```
   "
   [tr key & {:keys [subspace coll] :or {subspace *subspace* coll false}}]
   (let [key   (-> (if subspace (make-subspace subspace key) key)
@@ -107,12 +115,14 @@
 
   :subspace - Subspace to be prefixed
 
+  ```
   (let [fd    (select-api-version 520)
         key   \"foo\"
         value \"bar\"]
   (with-open [db (open fd)]
      (tr! db
           (set-val tr key value))))
+  ```
   "
   [tr key value & {:keys [subspace] :or {subspace *subspace*}}]
   (let [key   (-> (if subspace (make-subspace subspace key) key)
@@ -127,11 +137,13 @@
 (defn set-keys
   "Set given keys with the value
 
+  ```
   (let [fd    (select-api-version 520)
         keys  [\"foo\" \"baz\"]
         value \"bar\"]
   (with-open [db (open fd)]
      (tr! db (set-keys tr keys value))))
+  ```
   "
   [tr keys value]
   (let [keys  (map #(key->packed-tuple %1) keys)
@@ -144,10 +156,12 @@
 (defn clear-key
   "Clear a key from the database
 
+  ```
   (let [fd  (select-api-version 520)
         key \"foo\"]
   (with-open [db (open fd)]
      (tr! db (clear-key tr key))))
+  ```
   "
   [tr key]
   (let [key (key->packed-tuple key)]
@@ -159,10 +173,12 @@
 (defn get-range-startswith
   "Get a range of key values as a vector that starts with prefix
 
+  ```
   (let [fd     (select-api-version 520)
         prefix \"f\"]
   (with-open [db (open fd)]
      (tr! db (get-range-startswith tr key prefix))))
+  ```
   "
   [tr prefix]
   (let [prefix      (key->packed-tuple prefix)
@@ -179,6 +195,7 @@
   that is realized when there is a change to key. Change in key value or clearing the key
   is noted as a change. A set statement with the old value is not a change.
 
+  ```
   (let [fd    (select-api-version 520)
        key    \"foo\"
        value  \"bar\"]
@@ -192,10 +209,11 @@
          (set-val tr key \"1\")
          (watch tr key #(println \"cleared key\"))
          (clear-key tr key))))
-
+  ```
   key is set
   key is changed to 1
   cleared key
+
   "
   [tr key callback]
   (let [key   (key->packed-tuple key)
@@ -209,11 +227,13 @@
 (defn get-range
   "Get a range of key values as a vector
 
+  ```
   (let [fd    (select-api-version 520)
         begin \"foo\"
         end   \"foo\"]
   (with-open [db (open fd)]
      (tr! db (get-range tr begin end))))
+  ```
   "
   ([tr begin]
    (let [begin       (Tuple/from (to-array (if (sequential? begin) begin [begin])))
@@ -247,6 +267,7 @@
   When only begin is given then the keys with starting with the tuple are cleared.
   When begin and end are specified then end is exclusive of the range to be cleared.
 
+  ```
   (let [fd    (select-api-version 520)
         begin \"foo\"]
   (with-open [db (open fd)]
@@ -257,6 +278,7 @@
         end   \"foo\"]
   (with-open [db (open fd)]
      (tr! db (clear-range tr begin end))))
+  ```
   "
   ([tr begin]
    (let [begin (key->tuple begin)]
@@ -285,10 +307,12 @@
 (defn last-less-than
   "Returns key and value pairs with keys less than the given key for the given limit
 
+  ```
   (let [fd  (select-api-version 520)
         key \"foo\"]
   (with-open [db (open fd)]
      (tr! db (last-less-than tr key))))
+  ```
   "
   ([tr key]
    (last-less-than tr key 1))
@@ -305,10 +329,12 @@
 (defn last-less-or-equal
   "Returns key and value pairs with keys less than or equal the given key for the given limit
 
+  ```
   (let [fd  (select-api-version 520)
         key \"foo\"]
   (with-open [db (open fd)]
      (tr! db (last-less-or-equal tr key))))
+  ```
   "
   ([tr key]
    (last-less-or-equal tr key 1))
@@ -325,10 +351,12 @@
 (defn first-greater-than
   "Returns key and value pairs with keys greater than the given key for the given limit
 
+  ```
   (let [fd  (select-api-version 520)
         key \"foo\"]
   (with-open [db (open fd)]
      (tr! db (first-greater-than tr key))))
+  ```
   "
   ([tr key]
    (first-greater-than tr key 1))
@@ -345,10 +373,12 @@
 (defn first-greater-or-equal
   "Returns key and value pairs with keys greater than or equal to the given key for the given limit
 
+  ```
   (let [fd  (select-api-version 520)
         key \"foo\"]
   (with-open [db (open fd)]
      (tr! db (first-greater-or-equal tr key))))
+  ```
   "
   ([tr key]
    (first-greater-or-equal tr key 1))
