@@ -15,8 +15,8 @@ Reference implementation in Java : https://apple.github.io/foundationdb/class-sc
 ```clojure
 
 (ns examples.main
-  (:import (com.apple.foundationdb FDB))
-  (:require [clj-foundationdb.core :refer :all]))
+  (:require [clj-foundationdb.core :refer :all]
+            [clj-foundationdb.utils :refer :all]))
 
 ;; Set a key
 
