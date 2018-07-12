@@ -89,24 +89,24 @@
          (filter #(pos-int? (second %1)) (get-range tr record)))))
 
 (comment
-  (let [fd (select-api-version 510)]
+  (let [fd (select-api-version 520)]
     (with-open [db (open fd)]
       (tr! db
            (init-db db)
            (add-class db all-classes))))
 
   ;; signup class
-  (let [fd (select-api-version 510)]
+  (let [fd (select-api-version 520)]
     (with-open [db (open fd)]
       (signup-class db "ram" "intro chem 10:00")))
 
   ;; drop class
-  (let [fd (select-api-version 510)]
+  (let [fd (select-api-version 520)]
     (with-open [db (open fd)]
       (drop-class db "ram" "intro chem 10:00")))
 
   ;; switch class
-  (let [fd (select-api-version 510)]
+  (let [fd (select-api-version 520)]
     (with-open [db (open fd)]
       (signup-class db "ram" "intro chem 10:00")
       (switch-class db "ram" "intro chem 10:00" "intro chem 11:00"))))
