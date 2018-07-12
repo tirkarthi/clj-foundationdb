@@ -23,7 +23,7 @@
   "Transaction macro to perform actions. Always use tr for actions inside
   each action since the transaction variable is bound to tr in the functions.
 
-  (let [fd    (select-api-version 510)
+  (let [fd    (select-api-version 520)
         key   \"foo\"
         value \"bar\"]
   (with-open [db (open fd)]
@@ -54,7 +54,7 @@
   Sets and gets the keys with the given subspace key prefixed.
   This essentially executes with code binding the given prefix to *subspace*.
 
-  (let [fd    (select-api-version 510)
+  (let [fd    (select-api-version 520)
         key   \"foo\"
         value \"bar\"]
     (with-open [db (open fd)]
@@ -75,13 +75,13 @@
   :subspace - Subspace to be prefixed
   :coll     - Boolean to indicate if the value needs to be deserialized as collection
 
-  (let [fd  (select-api-version 510)
+  (let [fd  (select-api-version 520)
         key \"foo\"]
   (with-open [db (open fd)]
      (tr! db
           (get-val tr key))))
 
-  (let [fd    (select-api-version 510)
+  (let [fd    (select-api-version 520)
        key   \"foo\"
        value [1 2 3]]
   (with-open [db (open fd)]
@@ -107,7 +107,7 @@
 
   :subspace - Subspace to be prefixed
 
-  (let [fd    (select-api-version 510)
+  (let [fd    (select-api-version 520)
         key   \"foo\"
         value \"bar\"]
   (with-open [db (open fd)]
@@ -127,7 +127,7 @@
 (defn set-keys
   "Set given keys with the value
 
-  (let [fd    (select-api-version 510)
+  (let [fd    (select-api-version 520)
         keys  [\"foo\" \"baz\"]
         value \"bar\"]
   (with-open [db (open fd)]
@@ -144,7 +144,7 @@
 (defn clear-key
   "Clear a key from the database
 
-  (let [fd  (select-api-version 510)
+  (let [fd  (select-api-version 520)
         key \"foo\"]
   (with-open [db (open fd)]
      (tr! db (clear-key tr key))))
@@ -159,7 +159,7 @@
 (defn get-range-startswith
   "Get a range of key values as a vector that starts with prefix
 
-  (let [fd     (select-api-version 510)
+  (let [fd     (select-api-version 520)
         prefix \"f\"]
   (with-open [db (open fd)]
      (tr! db (get-range-startswith tr key prefix))))
@@ -179,7 +179,7 @@
   that is realized when there is a change to key. Change in key value or clearing the key
   is noted as a change. A set statement with the old value is not a change.
 
-  (let [fd    (select-api-version 510)
+  (let [fd    (select-api-version 520)
        key    \"foo\"
        value  \"bar\"]
   (with-open [db (open fd)]
@@ -209,7 +209,7 @@
 (defn get-range
   "Get a range of key values as a vector
 
-  (let [fd    (select-api-version 510)
+  (let [fd    (select-api-version 520)
         begin \"foo\"
         end   \"foo\"]
   (with-open [db (open fd)]
@@ -247,12 +247,12 @@
   When only begin is given then the keys with starting with the tuple are cleared.
   When begin and end are specified then end is exclusive of the range to be cleared.
 
-  (let [fd    (select-api-version 510)
+  (let [fd    (select-api-version 520)
         begin \"foo\"]
   (with-open [db (open fd)]
      (tr! db (clear-range tr begin))))
 
-  (let [fd    (select-api-version 510)
+  (let [fd    (select-api-version 520)
         begin \"foo\"
         end   \"foo\"]
   (with-open [db (open fd)]
@@ -285,7 +285,7 @@
 (defn last-less-than
   "Returns key and value pairs with keys less than the given key for the given limit
 
-  (let [fd  (select-api-version 510)
+  (let [fd  (select-api-version 520)
         key \"foo\"]
   (with-open [db (open fd)]
      (tr! db (last-less-than tr key))))
@@ -305,7 +305,7 @@
 (defn last-less-or-equal
   "Returns key and value pairs with keys less than or equal the given key for the given limit
 
-  (let [fd  (select-api-version 510)
+  (let [fd  (select-api-version 520)
         key \"foo\"]
   (with-open [db (open fd)]
      (tr! db (last-less-or-equal tr key))))
@@ -325,7 +325,7 @@
 (defn first-greater-than
   "Returns key and value pairs with keys greater than the given key for the given limit
 
-  (let [fd  (select-api-version 510)
+  (let [fd  (select-api-version 520)
         key \"foo\"]
   (with-open [db (open fd)]
      (tr! db (first-greater-than tr key))))
@@ -345,7 +345,7 @@
 (defn first-greater-or-equal
   "Returns key and value pairs with keys greater than or equal to the given key for the given limit
 
-  (let [fd  (select-api-version 510)
+  (let [fd  (select-api-version 520)
         key \"foo\"]
   (with-open [db (open fd)]
      (tr! db (first-greater-or-equal tr key))))

@@ -16,7 +16,7 @@
 
 (defn key-fixture
   [test]
-  (let [fd    (select-api-version 510)
+  (let [fd    (select-api-version 520)
         keys  ["bar" "bar1" "bar2" "car"]
         value "1"]
     (with-open [db (open fd)]
@@ -31,7 +31,7 @@
 
 (deftest test-transaction
   (testing "Test transaction rollback"
-    (let [fd    (select-api-version 510)
+    (let [fd    (select-api-version 520)
           key   "foo"
           value "1"]
       (with-open [db (open fd)]
@@ -39,7 +39,7 @@
              (is (nil? (get-val tr key)))
              (set-val tr key value)
              (is (= (get-val tr key) value)))))
-    (let [fd    (select-api-version 510)
+    (let [fd    (select-api-version 520)
           key   "foo"
           value "2"]
       (with-open [db (open fd)]
@@ -48,7 +48,7 @@
                           (set-val tr key value)
                           (is (= (get-val tr key) value))
                           (/ 1 0))))))
-    (let [fd    (select-api-version 510)
+    (let [fd    (select-api-version 520)
           key   "foo"
           value "1"]
       (with-open [db (open fd)]
@@ -57,7 +57,7 @@
 
 (deftest test-set
   (testing "Test simple set with string"
-    (let [fd    (select-api-version 510)
+    (let [fd    (select-api-version 520)
           key   "foo"
           value "1"]
       (with-open [db (open fd)]
@@ -67,7 +67,7 @@
              (is (= (get-val tr key) value))))))
 
   (testing "Test simple set with int"
-    (let [fd    (select-api-version 510)
+    (let [fd    (select-api-version 520)
           key   "foo"
           value 1]
       (with-open [db (open fd)]
@@ -76,7 +76,7 @@
              (is (= (get-val tr key) value))))))
 
   (testing "Test simple set with float"
-    (let [fd    (select-api-version 510)
+    (let [fd    (select-api-version 520)
           key   "foo"
           value 1.5]
       (with-open [db (open fd)]
@@ -85,7 +85,7 @@
              (is (= (get-val tr key) value))))))
 
   (testing "Test simple set with vector"
-    (let [fd    (select-api-version 510)
+    (let [fd    (select-api-version 520)
           key   "foo"
           value [1 2 3]]
       (with-open [db (open fd)]
@@ -96,7 +96,7 @@
 
 (deftest test-multiple-set
   (testing "Test multiple set"
-    (let [fd            (select-api-version 510)
+    (let [fd            (select-api-version 520)
           keys          ["foo" "for"]
           expected-keys (seq ["bar" "bar1" "bar2" "car" "foo" "for"])
           value         "1"]
@@ -106,7 +106,7 @@
              (is (every? #(= (get-val tr %1) value) expected-keys))))))
 
   (testing "Test get all keys"
-    (let [fd    (select-api-version 510)
+    (let [fd    (select-api-version 520)
           keys  (seq ["bar" "bar1" "bar2" "car" "foo" "for"])
           value "1"]
       (with-open [db (open fd)]
@@ -117,7 +117,7 @@
 
 (deftest test-get-range-begin-end
   (testing "Test get all keys with the range of begin and end with end being exclusive. [a, b)"
-    (let [fd     (select-api-version 510)
+    (let [fd     (select-api-version 520)
           prefix "b"
           value  "1"]
       (with-open [db (open fd)]
@@ -128,7 +128,7 @@
 
 (deftest test-get-range-starts-with
   (testing "Test get all keys with prefix"
-    (let [fd     (select-api-version 510)
+    (let [fd     (select-api-version 520)
           prefix "car"
           value  "1"]
       (with-open [db (open fd)]
@@ -139,7 +139,7 @@
 
 (deftest test-get-last-less-than
   (testing "Test last less than the given key"
-    (let [fd            (select-api-version 510)
+    (let [fd            (select-api-version 520)
           key           "bar1"
           value         "1"
           expected-keys '("bar")]
@@ -151,7 +151,7 @@
 
 (deftest test-get-last-less-or-equal
   (testing "Test last less than or equal to the given key"
-    (let [fd            (select-api-version 510)
+    (let [fd            (select-api-version 520)
           key           "bar1"
           value         "1"
           expected-keys '("bar1")]
@@ -163,7 +163,7 @@
 
 (deftest test-get-first-greater-than
   (testing "Test first greater than"
-    (let [fd            (select-api-version 510)
+    (let [fd            (select-api-version 520)
           key           "bar"
           value         "1"
           expected-keys '("bar1")]
@@ -174,7 +174,7 @@
                (is (every? #(= (get-val tr %1) value) keys)))))))
 
   (testing "Test first greater than with limit"
-    (let [fd            (select-api-version 510)
+    (let [fd            (select-api-version 520)
           key           "bar"
           value         "1"
           limit         2
@@ -186,7 +186,7 @@
                (is (every? #(= (get-val tr %1) value) keys)))))))
 
   (testing "Test first greater than with last key"
-    (let [fd    (select-api-version 510)
+    (let [fd    (select-api-version 520)
           key   "foo"
           value "1"]
       (with-open [db (open fd)]
@@ -196,7 +196,7 @@
 
 (deftest test-get-first-greater-or-equal
   (testing "Test first greater or equal"
-    (let [fd            (select-api-version 510)
+    (let [fd            (select-api-version 520)
           key           "bar"
           value         "1"
           expected-keys '("bar")]
@@ -207,7 +207,7 @@
                (is (every? #(= (get-val tr %1) value) keys)))))))
 
   (testing "Test first greater or equal with limit"
-    (let [fd            (select-api-version 510)
+    (let [fd            (select-api-version 520)
           key           "bar"
           value         "1"
           limit         2
@@ -220,7 +220,7 @@
 
 (deftest test-non-existent-get
   (testing "Test non-existent record for nil"
-    (let [fd  (select-api-version 510)
+    (let [fd  (select-api-version 520)
           key "foo12"]
       (with-open [db (open fd)]
         (tr! db
@@ -228,7 +228,7 @@
 
 (deftest test-clear
   (testing "Test clear a key"
-    (let [fd    (select-api-version 510)
+    (let [fd    (select-api-version 520)
           key   "foo123"
           value "1"]
       (with-open [db (open fd)]
@@ -240,7 +240,7 @@
 
 (deftest test-clear-range
   (testing "Test clearing range"
-    (let [fd      (select-api-version 510)
+    (let [fd      (select-api-version 520)
           in-keys [["foo" "a"] ["foo" "b"] ["gum" "c"]]
           value   "1"
           k       ["gum" "c"]]
@@ -253,7 +253,7 @@
              (is (= (get-val tr k) value))))))
 
   (testing "Test clearing range with begin and end with end being exclusive"
-    (let [fd      (select-api-version 510)
+    (let [fd      (select-api-version 520)
           in-keys [["bar" "a"] ["foo" "a"] ["foo" "b"] ["gum" "a"]]
           value   "1"]
       (with-open [db (open fd)]
@@ -265,7 +265,7 @@
 
 (deftest test-clear-all
   (testing "Test clear all"
-    (let [fd    (select-api-version 510)
+    (let [fd    (select-api-version 520)
           key   "z"
           value "1"]
       (with-open [db (open fd)]
@@ -276,7 +276,7 @@
 
 (deftest test-subspace
   (testing "Test simple subspace"
-    (let [fd    (select-api-version 510)
+    (let [fd    (select-api-version 520)
           key   "foo"
           value "bar"]
       (with-open [db (open fd)]
@@ -289,7 +289,7 @@
              (is (= (get-all tr) [[["class" "foo"] "bar"]]))))))
 
   (testing "Test multiple level subspace"
-    (let [fd    (select-api-version 510)
+    (let [fd    (select-api-version 520)
           key   "foo"
           value "bar"]
       (with-open [db (open fd)]
@@ -304,7 +304,7 @@
 
 (deftest test-watch
   (testing "Test watch and callback is called"
-    (let [fd    (select-api-version 510)
+    (let [fd    (select-api-version 520)
           key    "foo"
           value  "bar"]
       (with-open [db (open fd)]

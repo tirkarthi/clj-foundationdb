@@ -2,22 +2,6 @@
 
 A Clojure wrapper for FoundationDB
 
-## Installation
-
-At the moment I cannot publish it in Clojars since the java driver was not yet released in Maven or other repo to use it as a dependency. You can clone the repo and install the java library through lein [localrepo](https://github.com/kumarshantanu/lein-localrepo) to use it.
-
-### Installation of FoundationDB jar
-
-Since FoundationDB is not present in the Maven repo I am using lein localrepo for installing the jar and using it in the project.
-
-JAR can be downloaded from Apple's [download page](https://apple.github.io/foundationdb/downloads.html)
-
-```
-$ lein localrepo install maven_repository/fdb-java-5.1.5.jar fdb 5.1.5
-```
-
-GitHub issue : https://github.com/apple/foundationdb/issues/219
-
 ## Documentation
 
 Docs are available at https://tirkarthi.github.io/clj-foundationdb
@@ -36,7 +20,7 @@ Reference implementation in Java : https://apple.github.io/foundationdb/class-sc
 
 ;; Set a key
 
-(let [fd    (select-api-version 510)
+(let [fd    (select-api-version 520)
       key   "foo"
       value 1]
   (with-open [db (open fd)]
@@ -47,7 +31,7 @@ nil
 
 ;; Get a key
 
-(let [fd    (select-api-version 510)
+(let [fd    (select-api-version 520)
       key   "foo"]
   (with-open [db (open fd)]
     (tr! db
@@ -57,7 +41,7 @@ nil
 
 ;; Perform multiple operations in a single transaction
 
-(let [fd    (select-api-version 510)
+(let [fd    (select-api-version 520)
       key   "foo"
       value 1]
   (with-open [db (open fd)]
@@ -69,7 +53,7 @@ nil
 
 ;; Set multiple keys with same value
 
-(let [fd    (select-api-version 510)
+(let [fd    (select-api-version 520)
       key   [["bar"] ["car"] ["dar"] ["far"]]
       value 1]
   (with-open [db (open fd)]
@@ -80,7 +64,7 @@ nil
 
 ;; Get a range of keys
 
-(let [fd    (select-api-version 510)
+(let [fd    (select-api-version 520)
       begin "car"
       end   "far"]
   (with-open [db (open fd)]
@@ -91,7 +75,7 @@ nil
 
 ;; Get all keys
 
-(let [fd    (select-api-version 510)]
+(let [fd    (select-api-version 520)]
   (with-open [db (open fd)]
     (tr! db
          (get-all tr))))
@@ -100,7 +84,7 @@ nil
 
 ;; First key less than given key
 
-(let [fd    (select-api-version 510)
+(let [fd    (select-api-version 520)
       key   "car"]
   (with-open [db (open fd)]
     (tr! db
@@ -110,7 +94,7 @@ nil
 
 ;; First key greater than given key
 
-(let [fd    (select-api-version 510)
+(let [fd    (select-api-version 520)
       key   "car"]
   (with-open [db (open fd)]
     (tr! db
@@ -120,7 +104,7 @@ nil
 
 ;; Nested keys
 
-(let [fd      (select-api-version 510)
+(let [fd      (select-api-version 520)
       classes [["class" "intro"] ["class" "algebra"] ["class" "maths"] ["class" "bio"]]
       time    "10:00"]
   (with-open [db (open fd)]
@@ -132,7 +116,7 @@ nil
 
 ;; Automatic subspace prefix within a context
 
-(let [fd      (select-api-version 510)
+(let [fd      (select-api-version 520)
       classes ["intro" "algebra" "maths" "bio"]
       time    "10:00"]
   (with-open [db (open fd)]
@@ -153,7 +137,7 @@ A basic example of the transactional nature of FoundationDB can be explained as 
 * Get the value of "foo" and it should return "1" since the previous transaction aborted with an exception and hence the value is not updated
 
 ```clojure
-clj-foundationdb.core> (let [fd    (select-api-version 510)
+clj-foundationdb.core> (let [fd    (select-api-version 520)
                              key   "foo"
                              value "1"]
                          (with-open [db (open fd)]
@@ -163,7 +147,7 @@ clj-foundationdb.core> (let [fd    (select-api-version 510)
 
 1
 
-clj-foundationdb.core> (let [fd    (select-api-version 510)
+clj-foundationdb.core> (let [fd    (select-api-version 520)
                              key   "foo"
                              value "2"]
                          (with-open [db (open fd)]
@@ -177,7 +161,7 @@ clj-foundationdb.core> (let [fd    (select-api-version 510)
 2
 ArithmeticException Divide by zero  clojure.lang.Numbers.divide (Numbers.java:163)
 
-clj-foundationdb.core> (let [fd    (select-api-version 510)
+clj-foundationdb.core> (let [fd    (select-api-version 520)
                              key   "foo"
                              value "1"]
                          (with-open [db (open fd)]
@@ -185,6 +169,10 @@ clj-foundationdb.core> (let [fd    (select-api-version 510)
                                 (get-val tr key))))
 1
 ```
+
+## Tuple encoding and alternatives
+
+This library uses tuple encoding so that manual encoding and decoding is not necessary. If you want a more thin wrapper please use [clj_fdb](https://github.com/vedang/clj_fdb/). Relevant issue : https://github.com/tirkarthi/clj-foundationdb/issues/15
 
 ## Stability
 
@@ -224,7 +212,7 @@ Hardware:
 ### FoundationDB single writes
 
 ```
-(let [fd    (select-api-version 510)
+(let [fd    (select-api-version 520)
       key   "foo"
       value "1"]
       (with-open [db (open fd)]
@@ -251,7 +239,7 @@ Found 1 outliers in 6 samples (16.6667 %)
   (dotimes [_ n]
      (.set tr key value)))
 
-clj-foundationdb.core> (let [fd (select-api-version 510)
+clj-foundationdb.core> (let [fd (select-api-version 520)
                              key (.getBytes "foo")
                              value (.getBytes "10000")]
                          (with-open [db (open fd)]
@@ -270,7 +258,7 @@ Evaluation count : 6 in 6 samples of 1 calls.
 1 million keys set in 23.74 seconds
 
 ```clojure
-(let [fd (select-api-version 510)
+(let [fd (select-api-version 520)
       kv (map #(vector (str %1) %1) (range 100000))]
   (time (let [clients (repeatedly 10 #(future
                                         (with-open [db (open fd)]
@@ -288,7 +276,7 @@ Evaluation count : 6 in 6 samples of 1 calls.
 100k keys read took 16.81 seconds
 
 ```
-(let [fd (select-api-version 510)
+(let [fd (select-api-version 520)
       kv (map #(vector (str %1) %1) (range 100000))]
   (time (with-open [db (open fd)]
           (let [clients (repeatedly 10 #(future
