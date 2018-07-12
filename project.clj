@@ -1,4 +1,4 @@
-(defproject xtreak/clj-foundationdb "0.0.1"
+(defproject xtreak/clj-foundationdb "0.0.2-SNAPSHOT"
   :description "A Clojure wrapper for FoundationDB"
   :url "http://github.com/tirkarthi/clj-foundationdb"
   :repositories {"local" ~(str (.toURI (java.io.File. "maven_repository")))}
